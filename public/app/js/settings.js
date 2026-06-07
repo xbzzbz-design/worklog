@@ -79,10 +79,36 @@ function renderSettings() {
 }
 
 function wireSettings(root) {
-  root.querySelector('#setName').addEventListener('input', e=>{ SETTINGS.userName = e.target.value || 'Designer'; });
+  let profileTimer = null;
+  const saveProfile = () => {
+    clearTimeout(profileTimer);
+    profileTimer = setTimeout(async () => {
+      try {
+        if (window.WLStore && window.WLStore.updateProfile) {
+          await window.WLStore.updateProfile({ name: SETTINGS.userName, dailyMax: SETTINGS.dailyMax });
+          markSynced();
+        }
+      } catch (err) {
+        console.error(err);
+        toast('Could not save profile settings.', 'info');
+      }
+    }, 500);
+    markSyncing();
+  };
+  const saveTeam = async () => {
+    try {
+      if (window.WLStore && window.WLStore.updateTeamSettings) await window.WLStore.updateTeamSettings();
+      markSynced();
+    } catch (err) {
+      console.error(err);
+      toast('Could not save team settings.', 'info');
+    }
+  };
+  root.querySelector('#setName').addEventListener('input', e=>{ SETTINGS.userName = e.target.value || 'Designer'; saveProfile(); });
   root.querySelectorAll('#setMax button').forEach(b=>b.addEventListener('click',()=>{
     SETTINGS.dailyMax = Math.max(1, SETTINGS.dailyMax + parseFloat(b.dataset.mx));
     root.querySelector('#setMax b').textContent = u(SETTINGS.dailyMax);
+    saveProfile();
   }));
   root.querySelectorAll('#setAddon button').forEach(b=>b.addEventListener('click',()=>{
     SETTINGS.addOn = Math.max(0, Math.round((SETTINGS.addOn + parseFloat(b.dataset.ao)*0.25)*100)/100);
@@ -100,22 +126,31 @@ function wireSettings(root) {
   root.querySelector('#setReplay').addEventListener('click', openOnboarding);
 
   // team settings
-  root.querySelectorAll('#dowPick .dow').forEach(b=>b.addEventListener('click',()=>{
+  root.querySelectorAll('#dowPick .dow').forEach(b=>b.addEventListener('click',async ()=>{
     const d = parseInt(b.dataset.dow);
     const i = TEAM_SETTINGS.workdays.indexOf(d);
     if (i>=0) TEAM_SETTINGS.workdays.splice(i,1); else TEAM_SETTINGS.workdays.push(d);
     b.classList.toggle('on');
     markSyncing();
+    await saveTeam();
   }));
-  root.querySelectorAll('#setHol button').forEach(b=>b.addEventListener('click',()=>{
+  root.querySelectorAll('#setHol button').forEach(b=>b.addEventListener('click',async ()=>{
     TEAM_SETTINGS.holidayAddOn = Math.max(0, Math.round((TEAM_SETTINGS.holidayAddOn + parseFloat(b.dataset.hl)*0.5)*100)/100);
     root.querySelector('#setHol b').textContent = '+' + u(TEAM_SETTINGS.holidayAddOn);
     markSyncing();
+    await saveTeam();
   }));
-  root.querySelectorAll('[data-holx]').forEach(b=>b.addEventListener('click',()=>{
+  root.querySelectorAll('[data-holx]').forEach(b=>b.addEventListener('click',async ()=>{
     const i = HOLIDAYS.findIndex(h=>h.date===b.dataset.holx);
-    if (i>=0) HOLIDAYS.splice(i,1);
-    markSyncing();
-    rerenderScreen('settings');
+    if (i<0) return;
+    try {
+      if (window.WLStore && window.WLStore.deleteHoliday) await window.WLStore.deleteHoliday(b.dataset.holx);
+      HOLIDAYS.splice(i,1);
+      markSyncing();
+      rerenderScreen('settings');
+    } catch (err) {
+      console.error(err);
+      toast('Could not delete holiday.', 'info');
+    }
   }));
 }

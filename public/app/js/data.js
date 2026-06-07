@@ -122,7 +122,7 @@ function E(o) { _eid++; return Object.assign({ id: 'e'+_eid, quantity: 1, isRevi
   conditionBriefIncomplete: false, conditionAssetNotProvided: false, conditionDeadlineRush: false,
   manualOverride: null, isFlagged: false, isStarred: false, note: '', driveLink: '', snap: null, parentId: null }, o); }
 
-const TODAY = '2026-06-06';
+const TODAY = new Date().toISOString().slice(0,10);
 
 const ENTRIES = [
   // today
@@ -337,6 +337,7 @@ function teamAnalysis(daily) {
 // a single member's personal capacity over a set of days (minus their leave)
 function memberCapacity(uid, days) {
   const m = teamMember(uid);
+  if (!m) return 0;
   return m.dailyMax * (days.length - leaveDaysInList(uid, days));
 }
 
@@ -357,5 +358,18 @@ const URGENCY = {
   soon:  { label:'When you can', tone:'mid' },
 };
 // team-level kindness count (collective, never per-person ranked)
-function timesHelpedThisMonth() { return HELP_REQUESTS.filter(h=>h.status==='resolved').length + 5; }
+function timesHelpedThisMonth() { return HELP_REQUESTS.filter(h=>h.status==='resolved').length; }
 
+if (!window.WL_ALLOW_PROTOTYPE_DATA) {
+  CLIENTS.splice(0, CLIENTS.length);
+  ENTRIES.splice(0, ENTRIES.length);
+  TEAM.splice(0, TEAM.length);
+  HOLIDAYS.splice(0, HOLIDAYS.length);
+  HELP_REQUESTS.splice(0, HELP_REQUESTS.length);
+  Object.keys(LEAVE).forEach(k => delete LEAVE[k]);
+  Object.keys(TEAM_DAILY).forEach(k => delete TEAM_DAILY[k]);
+  Object.keys(TEAM_WEEK).forEach(k => delete TEAM_WEEK[k]);
+  TEAM_SPLIT.newWork = 0;
+  TEAM_SPLIT.revision = 0;
+  TEAM_SPLIT.meeting = 0;
+}

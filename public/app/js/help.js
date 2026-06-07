@@ -127,5 +127,5 @@ function wireHelp(root) {
     });
   });
   const rb = root.querySelector('#replayOnboard');
-  if (rb) rb.addEventListener('click', ()=> toast('Onboarding replay → dev hook', 'info'));
+  if (rb) rb.addEventListener('click', openOnboarding);
 }

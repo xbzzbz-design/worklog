@@ -182,16 +182,65 @@ function openDetail(id) {
   m.classList.add('open');
   refreshIcons();
   m.querySelector('.dm-overlay').addEventListener('click', closeDetail);
-  m.querySelector('#dmEdit').addEventListener('click', () => { closeDetail(); go('entry'); toast('Edit pre-fills the form → dev hook', 'info'); });
-  m.querySelector('#dmDelete').addEventListener('click', () => {
+  m.querySelector('#dmEdit').addEventListener('click', () => {
+    draft = Object.assign(freshDraft(), {
+      clientId: e.clientId,
+      jobType: e.jobType,
+      otherKind: e.otherKind || 'MEETING',
+      quantity: e.quantity || 1,
+      hours: e.hours || e.quantity || 1,
+      isRevision: !!e.isRevision,
+      revisionRound: e.revisionRound || 1,
+      revisionSeverity: e.revisionSeverity || 'STANDARD',
+      revisionCause: e.revisionCause || null,
+      motionOn: (e.motionScenes || 0) > 0,
+      motionScenes: e.motionScenes || 1,
+      conditionBriefIncomplete: !!e.conditionBriefIncomplete,
+      conditionAssetNotProvided: !!e.conditionAssetNotProvided,
+      conditionDeadlineRush: !!e.conditionDeadlineRush,
+      manualOverride: e.manualOverride,
+      manualOverrideReason: e.manualOverrideReason || '',
+      note: e.note || '',
+      driveLink: e.driveLink || '',
+      snap: e.snap || null,
+      isFlagged: !!e.isFlagged,
+      flagNote: e.flagNote || '',
+      isStarred: !!e.isStarred,
+      parentId: e.parentId || null,
+      editId: e.id,
+    });
+    saveDraft();
+    closeDetail();
+    go('entry');
+    toast('Entry loaded into the form', 'info');
+  });
+  m.querySelector('#dmDelete').addEventListener('click', async () => {
     const idx = ENTRIES.findIndex(x=>x.id===id);
     if (idx<0) return;
     const removed = ENTRIES[idx];
-    ENTRIES.splice(idx,1);
-    markSyncing();
-    closeDetail();
-    go(currentScreen);
-    undoToast('Entry deleted', () => { ENTRIES.splice(Math.min(idx, ENTRIES.length), 0, removed); markSyncing(); go(currentScreen); });
+    try {
+      if (window.WLStore && window.WLStore.deleteEntry) await window.WLStore.deleteEntry(id);
+      ENTRIES.splice(idx,1);
+      markSyncing();
+      closeDetail();
+      go(currentScreen);
+      undoToast('Entry deleted', async () => {
+        try {
+          const restored = window.WLStore && window.WLStore.saveEntry
+            ? await window.WLStore.saveEntry(removed)
+            : removed;
+          if (!ENTRIES.find(x => x.id === restored.id)) ENTRIES.splice(Math.min(idx, ENTRIES.length), 0, restored);
+          markSyncing();
+          go(currentScreen);
+        } catch (err) {
+          console.error(err);
+          toast('Could not restore entry. Try again.', 'info');
+        }
+      });
+    } catch (err) {
+      console.error(err);
+      toast('Could not delete entry. Try again.', 'info');
+    }
   });
 }
 function closeDetail() { const m=document.getElementById('detailModal'); if(m) m.classList.remove('open'); }

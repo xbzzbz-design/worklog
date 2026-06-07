@@ -16,6 +16,49 @@ function clientStats(id) {
 }
 function rateClass(r) { return r<20?'g':r<=50?'y':'r'; }
 
+function openClientCreate(onCreated) {
+  const el = mountOverlay('clientCreateModal');
+  el.innerHTML = `
+    <div class="dm-overlay"></div>
+    <div class="dm-sheet">
+      <div class="dm-grab"></div>
+      <div class="ask-head">${ic('contact')}<div><b>Add client</b><small>Create the client once, then everyone can log against it.</small></div></div>
+      <div class="ask-body">
+        <input id="newClientName" class="ask-in" placeholder="Client name" autocomplete="off">
+      </div>
+      <div class="dm-actions">
+        <button class="btn ghost" id="clientCancel">Cancel</button>
+        <button class="btn" id="clientSave">${ic('plus')} Add client</button>
+      </div>
+    </div>`;
+  el.classList.add('open');
+  refreshIcons();
+  const close = () => el.classList.remove('open');
+  el.querySelector('.dm-overlay').addEventListener('click', close);
+  el.querySelector('#clientCancel').addEventListener('click', close);
+  const input = el.querySelector('#newClientName');
+  setTimeout(()=>input.focus(), 50);
+  el.querySelector('#clientSave').addEventListener('click', async () => {
+    const name = input.value.trim();
+    if (!name) { input.focus(); return; }
+    const btn = el.querySelector('#clientSave');
+    btn.disabled = true;
+    try {
+      const client = window.WLStore && window.WLStore.createClient
+        ? await window.WLStore.createClient(name)
+        : (() => { const c = { id:'c'+Date.now(), name, archived:false }; CLIENTS.push(c); return c; })();
+      close();
+      toast('Client added', 'good');
+      if (onCreated) onCreated(client);
+      else rerenderScreen('clients');
+    } catch (err) {
+      console.error(err);
+      btn.disabled = false;
+      toast('Could not add client. Try again.', 'info');
+    }
+  });
+}
+
 function renderClients() {
   const active = CLIENTS.filter(c=>!c.archived);
   const archived = CLIENTS.filter(c=>c.archived);
@@ -52,7 +95,7 @@ function wireClients(root) {
   const at = root.querySelector('#archToggle');
   if (at) at.addEventListener('click',()=>{ const l=root.querySelector('#archList'); l.hidden=!l.hidden; at.classList.toggle('open', !l.hidden); });
   const ac = root.querySelector('#addClient');
-  if (ac) ac.addEventListener('click',()=> toast('Add-client flow → dev hook', 'info'));
+  if (ac) ac.addEventListener('click',()=> openClientCreate(()=>rerenderScreen('clients')));
 }
 
 function renderClientDetail() {
@@ -107,5 +150,18 @@ function wireClientDetail(root) {
   root.querySelectorAll('[data-entry]').forEach(el=>el.addEventListener('click',()=>openDetail(el.dataset.entry)));
   root.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.go)));
   const ab = root.querySelector('[data-archive]');
-  if (ab) ab.addEventListener('click',()=>{ const c=CLIENTS.find(x=>x.id===ab.dataset.archive); c.archived=!c.archived; toast(c.archived?'Client archived':'Client restored','info'); go('clientDetail'); });
+  if (ab) ab.addEventListener('click', async ()=>{
+    const c=CLIENTS.find(x=>x.id===ab.dataset.archive);
+    if (!c) return;
+    const next = !c.archived;
+    try {
+      if (window.WLStore && window.WLStore.setClientArchived) await window.WLStore.setClientArchived(c.id, next);
+      else c.archived = next;
+      toast(next?'Client archived':'Client restored','info');
+      go('clientDetail');
+    } catch (err) {
+      console.error(err);
+      toast('Could not update client. Try again.', 'info');
+    }
+  });
 }

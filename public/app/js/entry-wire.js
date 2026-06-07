@@ -34,7 +34,11 @@ function wireEntry(root) {
     refreshIcons();
     saveDraft(); syncThreadPicker();
   }));
-  $('.add-client').addEventListener('click', () => toast('Add-client flow → dev hook', 'info'));
+  $('.add-client').addEventListener('click', () => openClientCreate((client) => {
+    draft.clientId = client.id;
+    saveDraft();
+    rerenderScreen('entry');
+  }));
 
   const fresh = $('#draftFresh');
   if (fresh) fresh.addEventListener('click', () => { clearDraft(); draft = freshDraft(); rerenderScreen('entry'); });
@@ -184,8 +188,18 @@ function wireEntry(root) {
     btn.classList.add('loading');
     try {
       const saved = window.WLStore && window.WLStore.saveEntry
-        ? await window.WLStore.saveEntry(eff)
-        : (() => { eff.id = 'e' + (++_eid); ENTRIES.unshift(eff); return eff; })();
+        ? (draft.editId && window.WLStore.updateEntry
+          ? await window.WLStore.updateEntry(draft.editId, eff)
+          : await window.WLStore.saveEntry(eff))
+        : (() => {
+          if (draft.editId) {
+            eff.id = draft.editId;
+            const idx = ENTRIES.findIndex(e => e.id === draft.editId);
+            if (idx >= 0) ENTRIES.splice(idx, 1, eff); else ENTRIES.unshift(eff);
+            return eff;
+          }
+          eff.id = 'e' + (++_eid); ENTRIES.unshift(eff); return eff;
+        })();
       if (window.NEW_ENTRY_ID !== undefined) window.NEW_ENTRY_ID = saved.id;
       eff.id = saved.id;
     } catch (err) {
