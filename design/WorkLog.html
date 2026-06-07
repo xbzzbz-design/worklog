@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkLog — Workload Tracker</title>
+<meta name="theme-color" content="#4b3fb0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WorkLog">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon-64.png">
+<link rel="stylesheet" href="css/worklog.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/forms.css">
+<link rel="stylesheet" href="css/report.css">
+<link rel="stylesheet" href="css/help.css">
+<link rel="stylesheet" href="css/modal.css">
+<link rel="stylesheet" href="css/screens.css">
+<link rel="stylesheet" href="css/features.css">
+<link rel="stylesheet" href="css/team.css">
+<link rel="stylesheet" href="css/anim.css">
+</head>
+<body data-mode="mobile">
+
+<div class="stage">
+
+  <!-- top brand bar + device toggle -->
+  <div class="brandbar">
+    <div class="lockup">
+      <span class="mark"><i data-lucide="layers"></i></span>
+      <div>
+        <div class="wm">Work<span>Log</span></div>
+      </div>
+      <span class="tag">· Fair workload tracking for design teams</span>
+    </div>
+    <div class="seg" id="modeSeg">
+      <button data-mode="mobile" class="on"><i data-lucide="smartphone"></i> Mobile</button>
+      <button data-mode="desktop"><i data-lucide="monitor"></i> Desktop</button>
+    </div>
+  </div>
+
+  <div class="frames">
+
+    <!-- ============ PHONE ============ -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="app">
+          <div class="statusbar">
+            <span class="tnum">9:41</span>
+            <span class="right"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span>
+          </div>
+          <div class="appbar">
+            <button class="ab-mark" data-nav="home"><span class="mark"><i data-lucide="layers"></i></span></button>
+            <div class="ab-right">
+              <div class="sync-pill" data-state="synced"></div>
+              <button class="ab-theme" id="mTheme" aria-label="Toggle theme"><i data-lucide="moon"></i></button>
+              <button class="ab-menu" id="mMenu"><i data-lucide="menu"></i></button>
+            </div>
+          </div>
+          <div class="app-scroll" id="mScroll"></div>
+          <nav class="botnav" id="mNav">
+            <button data-nav="home" class="on"><i data-lucide="house"></i> Home</button>
+            <button data-nav="timeline"><i data-lucide="calendar-days"></i> Timeline</button>
+            <button data-nav="entry" class="fab"><span class="fabring"><i data-lucide="plus"></i></span> New</button>
+            <button data-nav="team"><i data-lucide="users-round"></i> Team</button>
+            <button data-nav="helpboard"><i data-lucide="hand-helping"></i> Help</button>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ DESKTOP ============ -->
+    <div class="desktop">
+      <div class="winbar">
+        <div class="lights"><i></i><i></i><i></i></div>
+        <div class="url"><i data-lucide="lock"></i> worklog.app/dashboard</div>
+        <div class="sync-pill" data-state="synced" style="margin-left:auto"></div>
+        <button class="ab-theme" id="dTheme" aria-label="Toggle theme"><i data-lucide="moon"></i></button>
+      </div>
+      <div class="winbody">
+        <aside class="sidebar">
+          <div class="sb-lock"><span class="mark"><i data-lucide="layers"></i></span><b>Work<span>Log</span></b></div>
+          <nav id="dNav">
+            <button data-nav="home" class="on"><i data-lucide="house"></i> Home</button>
+            <button data-nav="entry"><i data-lucide="plus"></i> New entry</button>
+            <button data-nav="timeline"><i data-lucide="calendar-days"></i> Timeline</button>
+            <button data-nav="report"><i data-lucide="file-text"></i> Report</button>
+            <div class="sb-div"></div>
+            <button data-nav="team"><i data-lucide="users-round"></i> Team</button>
+            <button data-nav="helpboard"><i data-lucide="hand-helping"></i> Help board</button>
+            <button data-nav="stats"><i data-lucide="chart-no-axes-column"></i> My stats</button>
+            <div class="sb-div"></div>
+            <button data-nav="clients"><i data-lucide="contact"></i> Clients</button>
+            <button data-nav="settings"><i data-lucide="settings"></i> Settings</button>
+            <button data-nav="help"><i data-lucide="circle-help"></i> Help</button>
+          </nav>
+          <div class="sb-foot">
+            <button class="sb-replay" id="dReplay"><i data-lucide="play"></i> Replay intro</button>
+            <div class="sb-user">
+              <span class="av">MS</span>
+              <div><b>Mai Suriya</b><small>7 units / day</small></div>
+            </div>
+          </div>
+        </aside>
+        <main class="desk-main" id="dScroll"></main>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- overlays mount dynamically inside the active device frame -->
+<div id="tweaksRoot"></div>
+
+<template id="__bundler_thumbnail" data-bg-color="#463fa6">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(600 400)" fill="none" stroke="#ffffff" stroke-width="34" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M -150 -40 L 0 -120 L 150 -40 L 0 40 Z" fill="#ffffff" stroke="#ffffff"/>
+      <path d="M -150 30 L 0 110 L 150 30" />
+      <path d="M -150 100 L 0 180 L 150 100" opacity="0.6" />
+    </g>
+  </svg>
+</template>
+
+<!-- scripts -->
+<script src="https://unpkg.com/lucide@0.544.0/dist/umd/lucide.min.js"></script>
+<script src="js/icon-data.js"></script>
+<script src="js/data.js"></script>
+<script src="js/helpers.js"></script>
+<script src="js/home.js"></script>
+<script src="js/entry.js"></script>
+<script src="js/entry-wire.js"></script>
+<script src="js/report.js"></script>
+<script src="js/pdf.js"></script>
+<script src="js/help.js"></script>
+<script src="js/timeline.js"></script>
+<script src="js/team.js"></script>
+<script src="js/helpboard.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/clients.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/onboarding.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/milestones.js"></script>
+<script src="js/app.js"></script>
+
+<!-- tweaks island (React) -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="tweaks-app.jsx"></script>
+</body>
+</html>
