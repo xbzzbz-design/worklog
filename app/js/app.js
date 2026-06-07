@@ -275,7 +275,7 @@ function openMenu() {
       <div class="ms-head"><span class="av">${SETTINGS.userName.split(/\s+/).map(w=>w[0]).filter(Boolean).slice(0,2).join('').toUpperCase()}</span><div><b>${SETTINGS.userName}</b><small>${u(SETTINGS.dailyMax)} units / day</small></div></div>
       <div class="ms-install">
         <img src="${window.WL_ICON||'icons/icon-192.png'}" alt="WorkLog" class="ms-app-icon">
-        <div class="ms-install-txt"><b>Install WorkLog</b><small>Add to your home screen — works offline</small></div>
+        <div class="ms-install-txt"><b>Install WorkLog</b><small>Add to your home screen — full-screen, no browser bar</small></div>
         <button class="ms-install-btn" id="msInstall">${ic('download')}</button>
       </div>
       <div class="ms-list">
@@ -288,9 +288,65 @@ function openMenu() {
   el.querySelector('.ms-overlay').addEventListener('click', closeMenu);
   el.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{ closeMenu(); go(b.dataset.go); }));
   el.querySelector('#msReplay').addEventListener('click', ()=>{ closeMenu(); openOnboarding(); });
-  el.querySelector('#msInstall').addEventListener('click', ()=>{ toast('Use your browser’s “Add to Home Screen”', 'info'); });
+  el.querySelector('#msInstall').addEventListener('click', requestInstall);
 }
 function closeMenu() { const el=document.getElementById('menuSheet'); if(el) el.classList.remove('open'); }
+
+/* ---- PWA install (the prompt lives on the parent window, so we relay) ---- */
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
+}
+function showInstallSteps(steps) {
+  const el = mountOverlay('detailModal');
+  el.innerHTML = `
+    <div class="dm-overlay"></div>
+    <div class="dm-sheet" style="max-width:420px">
+      <div class="dm-grab"></div>
+      <div class="ask-head">${ic('download')}<div><b>Install WorkLog</b><small>Add it to your home screen for full-screen access.</small></div></div>
+      <div class="ask-body">
+        <ol style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.5">
+          ${steps.map(s=>`<li>${s}</li>`).join('')}
+        </ol>
+      </div>
+      <button class="btn full lg" id="instOk">${ic('check')} Got it</button>
+    </div>`;
+  el.classList.add('open');
+  refreshIcons();
+  const close = () => el.classList.remove('open');
+  el.querySelector('.dm-overlay').addEventListener('click', close);
+  el.querySelector('#instOk').addEventListener('click', close);
+}
+function requestInstall() {
+  closeMenu();
+  if (isStandalone()) { toast('WorkLog is already installed 🎉', 'good'); return; }
+  if (isIOS()) {
+    showInstallSteps([
+      `Tap the <b>Share</b> button ${ic('upload')} in Safari's toolbar`,
+      `Scroll down and choose <b>“Add to Home Screen”</b>`,
+      `Tap <b>Add</b> — WorkLog appears on your home screen`,
+    ]);
+    return;
+  }
+  // Android / desktop Chrome-family: ask the parent window to fire the native prompt
+  window.parent && window.parent.postMessage({ type: 'WL_INSTALL_REQUEST' }, window.location.origin);
+}
+window.addEventListener('message', (e) => {
+  if (e.origin !== window.location.origin) return;
+  const t = e.data && e.data.type;
+  if (t === 'WL_INSTALL_UNAVAILABLE') {
+    showInstallSteps([
+      `Open your browser menu <b>⋮</b> (top-right)`,
+      `Choose <b>“Install WorkLog”</b> or <b>“Add to Home screen”</b>`,
+      `If you don't see it, the app may already be installed`,
+    ]);
+  } else if (t === 'WL_INSTALLED') {
+    toast('WorkLog installed 🎉', 'good');
+  }
+});
 
 /* ---- Tweaks bridge (driven by the React tweaks island) ---- */
 const ACCENTS = {

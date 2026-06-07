@@ -156,10 +156,9 @@ function renderReport() {
     </div>` : ''}
 
     <div class="report-actions">
-      <button class="btn lg" id="exportPdf">${ic('file-down')} Export PDF</button>
-      <button class="btn ghost lg" id="shareLink">${ic('link-2')} Share link</button>
+      <button class="btn lg full" id="exportPdf">${ic('file-down')} Export PDF</button>
     </div>
-    <div class="export-hint">A multi-page report with daily log, scope evidence &amp; appendix — or a read-only link your lead can open in the browser.</div>
+    <div class="export-hint">A multi-page report with daily log, scope evidence &amp; appendix — opens your browser's print dialog, then choose “Save as PDF”.</div>
   </div>`;
 }
 
@@ -189,30 +188,4 @@ function wireReport(root) {
   });
   const ex = root.querySelector('#exportPdf');
   if (ex) ex.addEventListener('click', () => openPdfPreview());
-  const sh = root.querySelector('#shareLink');
-  if (sh) sh.addEventListener('click', () => openShareModal());
-}
-
-function openShareModal() {
-  const link = `worklog.app/r/${Math.random().toString(36).slice(2,9)}`;
-  const el = mountOverlay('detailModal');
-  el.innerHTML = `
-    <div class="dm-overlay"></div>
-    <div class="dm-sheet" style="max-width:440px">
-      <div class="dm-grab"></div>
-      <div class="share-head">${ic('link-2')}<div><b>Read-only report link</b><small>Anyone with the link can view — not edit.</small></div></div>
-      <div class="share-link"><span class="tnum">${link}</span><button class="btn soft" id="copyLink">${ic('copy')} Copy</button></div>
-      <div class="share-opts">
-        <label class="share-opt"><span>${ic('eye-off')} Hide client names</span><span class="mini-switch"></span></label>
-        <label class="share-opt"><span>${ic('clock')} Expires in 30 days</span><span class="mini-switch on"></span></label>
-      </div>
-      <div class="share-note">${ic('info')} In production this generates a static, signed link (no login needed). For now it's a stub — the PDF export is fully working.</div>
-    </div>`;
-  el.classList.add('open');
-  refreshIcons();
-  el.querySelector('.dm-overlay').addEventListener('click', closeDetail);
-  el.querySelector('#copyLink').addEventListener('click', () => {
-    try { navigator.clipboard && navigator.clipboard.writeText(link); } catch(e){}
-    toast('Link copied to clipboard');
-  });
 }
