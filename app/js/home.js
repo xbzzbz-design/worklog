@@ -65,7 +65,7 @@ function renderHome() {
   const weekClientIds = [...new Set(weekEs.map(e=>e.clientId))];
   const hardest = weekClientIds.map(id=>({ id, score: computeDifficulty(id).score })).sort((a,b)=>b.score-a.score)[0];
 
-  const hour = 18;
+  const hour = new Date().getHours();
   const greetWord = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
   const encourage = over
     ? `That's a big day — ${u(todayTotal)} units logged.`

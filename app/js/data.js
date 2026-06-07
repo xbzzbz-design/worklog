@@ -272,9 +272,10 @@ let LEAVE = {
   u1: [{ date:'2026-06-03', type:'vacation' }],
   u4: [{ date:'2026-06-05', type:'sick' }],
 };
-const myLeave = () => (LEAVE['u1'] = LEAVE['u1'] || []);
+const myId = () => window.WL_CURRENT_USER_ID || 'u1';
+const myLeave = () => (LEAVE[myId()] = LEAVE[myId()] || []);
 const leaveOn = (uid, d) => (LEAVE[uid]||[]).find(l=>l.date===d);
-const myLeaveOn = (d) => leaveOn('u1', d);
+const myLeaveOn = (d) => leaveOn(myId(), d);
 const LEAVE_TYPES = {
   sick:     { label:'Sick leave', icon:'thermometer', tone:'bad' },
   vacation: { label:'Vacation',   icon:'palmtree',    tone:'mid' },

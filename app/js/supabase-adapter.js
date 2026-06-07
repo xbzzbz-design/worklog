@@ -344,6 +344,30 @@
     if (error) throw error;
   }
 
+  async function createHoliday(date, name) {
+    await requireUser();
+    const { data, error } = await sb.from('holidays')
+      .upsert({ date, name: name || 'Day off' }, { onConflict: 'date' })
+      .select('*').single();
+    if (error) throw error;
+    return { id: data.id, date: data.date, name: data.name };
+  }
+
+  async function setLeave(date, type) {
+    const user = await requireUser();
+    const { data, error } = await sb.from('leave')
+      .upsert({ user_id: user.id, date, type }, { onConflict: 'user_id,date' })
+      .select('*').single();
+    if (error) throw error;
+    return { id: data.id, date: data.date, type: data.type };
+  }
+
+  async function clearLeave(date) {
+    const user = await requireUser();
+    const { error } = await sb.from('leave').delete().eq('user_id', user.id).eq('date', date);
+    if (error) throw error;
+  }
+
   function updateSidebarUser() {
     const av = document.querySelector('.sb-user .av');
     const name = document.querySelector('.sb-user b');
@@ -356,7 +380,7 @@
   window.WLStore = {
     bootstrap, saveEntry, updateEntry, deleteEntry, createClient, setClientArchived,
     createHelpRequest, claimHelpRequest, resolveHelpRequest, deleteHelpRequest,
-    updateProfile, updateTeamSettings, deleteHoliday,
+    updateProfile, updateTeamSettings, deleteHoliday, createHoliday, setLeave, clearLeave,
     supabase: sb
   };
   window.WLStoreErrorText = (err) => {
