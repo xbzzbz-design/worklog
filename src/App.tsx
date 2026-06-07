@@ -3,6 +3,8 @@ import { supabase } from './lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 import Login from './pages/Login'
 
+const runtimeVersion = '2026-06-08-01'
+
 export default function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
   const [theme] = useState(() => localStorage.getItem('wl-theme') || 'light')
@@ -46,7 +48,7 @@ export default function App() {
     <iframe
       ref={runtimeRef}
       title="WorkLog"
-      src={`${import.meta.env.BASE_URL}app/WorkLog.html`}
+      src={`${import.meta.env.BASE_URL}app/WorkLog.html?v=${runtimeVersion}`}
       onLoad={sendRuntimeSession}
       style={{
         position: 'fixed',
