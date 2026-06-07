@@ -2,6 +2,13 @@ import { useState } from 'react'
 import { Layers, Mail, ArrowRight, CheckCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
+function appRedirectUrl() {
+  const url = new URL(import.meta.env.BASE_URL, window.location.origin)
+  url.hash = ''
+  url.search = ''
+  return url.toString()
+}
+
 export default function Login() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,7 +22,7 @@ export default function Login() {
     setError('')
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
-      options: { emailRedirectTo: window.location.href },
+      options: { emailRedirectTo: appRedirectUrl() },
     })
     setLoading(false)
     if (error) {
