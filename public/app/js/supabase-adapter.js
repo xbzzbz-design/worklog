@@ -10,18 +10,20 @@
 
   window.WL_SB = sb;
   window.WL_CURRENT_USER_ID = null;
-  let receivedParentSession = false;
+  let bootstrapped = false;
 
   window.addEventListener('message', async (event) => {
     if (event.origin !== window.location.origin) return;
     const msg = event.data || {};
     if (msg.type !== 'WL_SESSION' || !sb || !msg.access_token || !msg.refresh_token) return;
     try {
-      receivedParentSession = true;
       await sb.auth.setSession({ access_token: msg.access_token, refresh_token: msg.refresh_token });
-      if (window.WL && window.WL.screen) {
+      // Only bootstrap + navigate on the first session message.
+      // Subsequent messages are just token refreshes — silently update the client, don't re-render.
+      if (!bootstrapped) {
+        bootstrapped = true;
         await bootstrap();
-        window.WL.go(window.WL.screen);
+        if (window.WL && window.WL.screen) window.WL.go(window.WL.screen);
       }
     } catch (err) {
       console.error('Could not accept parent session', err);
@@ -117,7 +119,7 @@
 
   async function waitForParentSession() {
     for (let i = 0; i < 12; i++) {
-      if (receivedParentSession) return;
+      if (bootstrapped) return;
       await new Promise(resolve => setTimeout(resolve, 100));
     }
   }
@@ -313,6 +315,15 @@
       daily_max: payload.dailyMax,
     }).eq('id', user.id);
     if (error) throw error;
+    // Keep in-memory state in sync so the header avatar and team view update immediately
+    SETTINGS.userName = payload.name;
+    SETTINGS.dailyMax = payload.dailyMax;
+    const me = TEAM.find(m => m.id === user.id);
+    if (me) {
+      me.name = payload.name;
+      me.initials = initials(payload.name);
+      me.dailyMax = payload.dailyMax;
+    }
   }
 
   async function updateTeamSettings() {
