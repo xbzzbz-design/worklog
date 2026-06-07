@@ -179,6 +179,15 @@
     if (settingsRes.data) {
       TEAM_SETTINGS.workdays.splice(0, TEAM_SETTINGS.workdays.length, ...(settingsRes.data.workdays || [1,2,3,4,5]));
       TEAM_SETTINGS.holidayAddOn = settingsRes.data.holiday_addon || TEAM_SETTINGS.holidayAddOn;
+      // team-wide rates + per-condition add-on (with last-edited audit)
+      if (settingsRes.data.add_on != null) SETTINGS.addOn = Number(settingsRes.data.add_on);
+      const rates = settingsRes.data.custom_rates;
+      if (rates && typeof rates === 'object') {
+        Object.keys(CUSTOM_RATES).forEach(k => delete CUSTOM_RATES[k]);
+        Object.entries(rates).forEach(([k, v]) => { CUSTOM_RATES[k] = Number(v); });
+      }
+      TEAM_SETTINGS.ratesUpdatedBy = settingsRes.data.rates_updated_by || null;
+      TEAM_SETTINGS.ratesUpdatedAt = settingsRes.data.rates_updated_at || null;
     }
 
     replaceArray(CLIENTS, (clientsRes.data || []).map(c => ({ id: c.id, name: c.name, archived: !!c.archived })));
@@ -338,6 +347,23 @@
     if (error) throw error;
   }
 
+  async function updateRates() {
+    const user = await requireUser();
+    const now = new Date().toISOString();
+    const { error } = await sb.from('team_settings').update({
+      add_on: SETTINGS.addOn,
+      custom_rates: { ...CUSTOM_RATES },
+      rates_updated_by: user.id,
+      rates_updated_at: now,
+      updated_at: now,
+    }).eq('id', 1);
+    if (error) throw error;
+    TEAM_SETTINGS.ratesUpdatedBy = user.id;
+    TEAM_SETTINGS.ratesUpdatedAt = now;
+    // re-credit all logs to the new team-wide scale so the whole team stays comparable
+    ENTRIES.forEach(e => { e._c = calcUnits(e); });
+  }
+
   async function deleteHoliday(date) {
     await requireUser();
     const { error } = await sb.from('holidays').delete().eq('date', date);
@@ -380,7 +406,7 @@
   window.WLStore = {
     bootstrap, saveEntry, updateEntry, deleteEntry, createClient, setClientArchived,
     createHelpRequest, claimHelpRequest, resolveHelpRequest, deleteHelpRequest,
-    updateProfile, updateTeamSettings, deleteHoliday, createHoliday, setLeave, clearLeave,
+    updateProfile, updateTeamSettings, updateRates, deleteHoliday, createHoliday, setLeave, clearLeave,
     supabase: sb
   };
   window.WLStoreErrorText = (err) => {

@@ -2,6 +2,17 @@
    WorkLog — Settings
    ============================================================ */
 
+function ratesAudit() {
+  const id = TEAM_SETTINGS.ratesUpdatedBy;
+  const at = TEAM_SETTINGS.ratesUpdatedAt;
+  if (!id || !at) return '';
+  const m = (typeof TEAM !== 'undefined') ? TEAM.find(x => x.id === id) : null;
+  const who = m ? (m.you ? 'you' : m.name) : 'a teammate';
+  let when = '';
+  try { when = new Date(at).toLocaleDateString('en-US', { day:'numeric', month:'short', year:'numeric' }); } catch(e){}
+  return `<div class="set-note" style="opacity:.75">${ic('history')} Last changed by <b>${who}</b>${when?` · ${when}`:''}</div>`;
+}
+
 function renderSettings() {
   return `
   <div class="page settings">
@@ -25,7 +36,7 @@ function renderSettings() {
         </div>
       </div>
       <div class="set-row">
-        <div><b>Add-on amount</b><small>Per condition (Brief, Assets, Rush)</small></div>
+        <div><b>Add-on amount</b><small>Per condition (Brief, Assets, Rush) · shared with team</small></div>
         <div class="mini-step" id="setAddon">
           <button data-ao="-1">${ic('minus')}</button><b class="tnum">+${u(SETTINGS.addOn)}</b><button data-ao="1">${ic('plus')}</button>
         </div>
@@ -33,7 +44,7 @@ function renderSettings() {
     </div>
 
     <div class="set-sec">
-      <div class="set-h">Job type rates</div>
+      <div class="set-h">Job type rates <span class="set-shared">${ic('users-round')} shared · agree together</span></div>
       <div class="rate-list" id="rateList">
         ${Object.entries(JOB_TYPES).map(([k,v])=>{
           const r = CUSTOM_RATES[k] != null ? CUSTOM_RATES[k] : v.rate;
@@ -46,7 +57,8 @@ function renderSettings() {
           </div>`;
         }).join('')}
       </div>
-      <div class="set-note">${ic('info')} Changing rates recalculates new entries only — past logs keep their original credit.</div>
+      <div class="set-note">${ic('info')} Rates &amp; add-on are shared by the whole team. Changing one re-credits every log to the new scale so everyone stays comparable.</div>
+      <div id="ratesAudit">${ratesAudit()}</div>
     </div>
 
     <div class="set-sec">
@@ -104,6 +116,25 @@ function wireSettings(root) {
       toast('Could not save team settings.', 'info');
     }
   };
+  let ratesTimer = null;
+  const saveRates = () => {
+    clearTimeout(ratesTimer);
+    markSyncing();
+    ratesTimer = setTimeout(async () => {
+      try {
+        if (window.WLStore && window.WLStore.updateRates) {
+          await window.WLStore.updateRates();
+          markSynced();
+          // refresh the "last changed by" line in place (no scroll/focus disruption)
+          const auditEl = root.querySelector('#ratesAudit');
+          if (auditEl) { auditEl.innerHTML = ratesAudit(); refreshIcons(); }
+        }
+      } catch (err) {
+        console.error(err);
+        toast('Could not save rates.', 'info');
+      }
+    }, 600);
+  };
   root.querySelector('#setName').addEventListener('input', e=>{ SETTINGS.userName = e.target.value || 'Designer'; saveProfile(); });
   root.querySelectorAll('#setMax button').forEach(b=>b.addEventListener('click',()=>{
     SETTINGS.dailyMax = Math.max(1, SETTINGS.dailyMax + parseFloat(b.dataset.mx));
@@ -113,6 +144,7 @@ function wireSettings(root) {
   root.querySelectorAll('#setAddon button').forEach(b=>b.addEventListener('click',()=>{
     SETTINGS.addOn = Math.max(0, Math.round((SETTINGS.addOn + parseFloat(b.dataset.ao)*0.25)*100)/100);
     root.querySelector('#setAddon b').textContent = '+' + u(SETTINGS.addOn);
+    saveRates();
   }));
   root.querySelectorAll('.mini-step.rate').forEach(step=>{
     const k = step.dataset.rk;
@@ -120,6 +152,7 @@ function wireSettings(root) {
       const base = CUSTOM_RATES[k] != null ? CUSTOM_RATES[k] : JOB_TYPES[k].rate;
       CUSTOM_RATES[k] = Math.max(0.25, Math.round((base + parseFloat(b.dataset.r))*100)/100);
       step.querySelector('b').textContent = u(CUSTOM_RATES[k]);
+      saveRates();
     }));
   });
   root.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.go)));
