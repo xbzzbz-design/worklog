@@ -173,7 +173,7 @@ function openDetail(id) {
         </div>`).join('')}
         <div class="dm-tr-sum">Thread total <b class="tnum">${u(sum(threadOf(e), t=>t._c.final))}</b> units across ${threadOf(e).length} jobs</div>
       </div>`:''}
-      ${e.snap||e.driveLink?`<div class="dm-evid">${e.snap?`<div class="dm-ev"><span class="dm-ev-th">▦</span> ${e.snap}</div>`:''}${e.driveLink?`<div class="dm-ev"><span class="dm-ev-th">${ic('link')}</span> Drive link attached</div>`:''}</div>`:''}
+      ${e.snap||e.driveLink?`<div class="dm-evid">${e.snap?(e.snap.startsWith('http')||e.snap.startsWith('/')?`<div class="dm-ev-img"><img src="${e.snap}" style="width:100%;border-radius:10px;max-height:200px;object-fit:cover;display:block"></div>`:`<div class="dm-ev"><span class="dm-ev-th">▦</span> ${e.snap}</div>`):''}${e.driveLink?`<div class="dm-ev"><span class="dm-ev-th">${ic('link')}</span> Drive link attached</div>`:''}</div>`:''}
       <div class="dm-actions">
         <button class="btn ghost" id="dmEdit">${ic('pencil')} Edit</button>
         <button class="btn ghost danger" id="dmDelete">${ic('trash-2')} Delete</button>
@@ -272,7 +272,7 @@ function openMenu() {
   el.innerHTML = `
     <div class="ms-overlay"></div>
     <div class="ms-panel">
-      <div class="ms-head"><span class="av">MS</span><div><b>${SETTINGS.userName}</b><small>${u(SETTINGS.dailyMax)} units / day</small></div></div>
+      <div class="ms-head"><span class="av">${SETTINGS.userName.split(/\s+/).map(w=>w[0]).filter(Boolean).slice(0,2).join('').toUpperCase()}</span><div><b>${SETTINGS.userName}</b><small>${u(SETTINGS.dailyMax)} units / day</small></div></div>
       <div class="ms-install">
         <img src="${window.WL_ICON||'icons/icon-192.png'}" alt="WorkLog" class="ms-app-icon">
         <div class="ms-install-txt"><b>Install WorkLog</b><small>Add to your home screen — works offline</small></div>

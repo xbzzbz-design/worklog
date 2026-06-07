@@ -102,3 +102,41 @@ function countUp(el, to, dur=600) {
   }
   requestAnimationFrame(step);
 }
+
+/* ---- image compression + Supabase Storage upload ---- */
+function compressSnap(file, maxPx = 600, maxKb = 50) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const blobUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(blobUrl);
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const tryQ = (q) => {
+        canvas.toBlob(blob => {
+          if (!blob) { reject(new Error('Canvas toBlob failed')); return; }
+          if (blob.size <= maxKb * 1024 || q <= 0.1) resolve(blob);
+          else tryQ(Math.round((q - 0.1) * 10) / 10);
+        }, 'image/jpeg', q);
+      };
+      tryQ(0.9);
+    };
+    img.onerror = () => { URL.revokeObjectURL(blobUrl); reject(new Error('Image load failed')); };
+    img.src = blobUrl;
+  });
+}
+
+async function uploadSnap(blob) {
+  const sb = window.WL_SB;
+  const uid = window.WL_CURRENT_USER_ID;
+  if (!sb || !uid) throw new Error('Not signed in');
+  const path = `${uid}/${Date.now()}.jpg`;
+  const { error } = await sb.storage.from('snaps').upload(path, blob, { contentType: 'image/jpeg' });
+  if (error) throw error;
+  const { data } = await sb.storage.from('snaps').createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+  return data.signedUrl;
+}

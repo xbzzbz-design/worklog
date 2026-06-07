@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 import Login from './pages/Login'
 
-const runtimeVersion = '2026-06-08-01'
+const runtimeVersion = '2026-06-08-02'
 
 export default function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)

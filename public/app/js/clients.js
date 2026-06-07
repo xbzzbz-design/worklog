@@ -31,9 +31,8 @@ function openClientCreate(onCreated) {
         <button class="btn" id="clientSave">${ic('plus')} Add client</button>
       </div>
     </div>`;
-  el.classList.add('open');
   refreshIcons();
-  const close = () => el.classList.remove('open');
+  const close = () => el.remove();
   el.querySelector('.dm-overlay').addEventListener('click', close);
   el.querySelector('#clientCancel').addEventListener('click', close);
   const input = el.querySelector('#newClientName');

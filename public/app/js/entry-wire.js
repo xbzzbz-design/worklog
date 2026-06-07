@@ -143,18 +143,41 @@ function wireEntry(root) {
   $('#noteField').addEventListener('input', (e) => { draft.note = e.target.value; saveDraft(); });
 
   /* --- STEP 9 evidence --- */
-  $('#snapBtn').addEventListener('click', () => {
-    draft.snap = 'Quick snap · 92 KB';
-    showSnapPreview($, draft.snap, 'image', 'Snap captured', '600px thumbnail · 92 KB');
-    saveDraft();
-    toast('Snap compressed to 92 KB');
-  });
-  $('#uploadBtn').addEventListener('click', () => {
-    draft.snap = 'Uploaded · banner_final.png';
-    showSnapPreview($, draft.snap, 'file-image', 'banner_final.png', '600px thumbnail · 78 KB');
-    saveDraft();
-    toast('Image compressed to 78 KB');
-  });
+  // inject hidden file inputs once
+  if (!document.getElementById('_snapInput')) {
+    const cam = Object.assign(document.createElement('input'), { type:'file', id:'_snapInput', accept:'image/*', capture:'environment', style:'display:none' });
+    const fil = Object.assign(document.createElement('input'), { type:'file', id:'_uploadInput', accept:'image/*', style:'display:none' });
+    document.body.appendChild(cam);
+    document.body.appendChild(fil);
+  }
+
+  const handleImageFile = async (file) => {
+    if (!file) return;
+    const preview = $('#snapPreview');
+    const previewUrl = URL.createObjectURL(file);
+    preview.hidden = false;
+    preview.innerHTML = `<div class="snap-card"><div class="snap-thumb"><img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div><div><b>Compressing…</b><small>${file.name}</small></div></div>`;
+    try {
+      const blob = await compressSnap(file, 600, 50);
+      const kb = Math.round(blob.size / 1024);
+      const path = await uploadSnap(blob);
+      draft.snap = path;
+      saveDraft();
+      preview.innerHTML = `<div class="snap-card"><div class="snap-thumb"><img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div><div><b>Uploaded · ${kb} KB</b><small>${file.name}</small></div><button class="snap-x" id="snapX">${ic('x')}</button></div>`;
+      refreshIcons();
+      preview.querySelector('#snapX').addEventListener('click', () => { draft.snap = null; preview.hidden = true; saveDraft(); });
+      toast(`Saved · ${kb} KB`, 'good');
+    } catch (err) {
+      console.error(err);
+      preview.hidden = true;
+      toast('Could not upload image. Try again.', 'info');
+    }
+  };
+
+  $('#snapBtn').addEventListener('click', () => document.getElementById('_snapInput').click());
+  $('#uploadBtn').addEventListener('click', () => document.getElementById('_uploadInput').click());
+  document.getElementById('_snapInput').addEventListener('change', e => handleImageFile(e.target.files[0]));
+  document.getElementById('_uploadInput').addEventListener('change', e => handleImageFile(e.target.files[0]));
   $('#driveField').addEventListener('input', (e)=>{ draft.driveLink = e.target.value; saveDraft(); });
 
   /* --- STEP 10 flag / star --- */

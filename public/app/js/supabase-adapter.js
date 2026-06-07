@@ -188,7 +188,7 @@
       name: u.name,
       initials: initials(u.name),
       dailyMax: u.daily_max || 7,
-      color: ['av-purple','av-green','av-blue','av-pink','av-amber','av-slate'][idx % 6],
+      colorIdx: idx % 6,
       you: u.id === user.id,
     })));
 
@@ -204,6 +204,7 @@
     ENTRIES.forEach(e => { e._c = calcUnits(e); });
 
     replaceArray(HELP_REQUESTS, (helpRes.data || []).map(fromDbHelp));
+    updateSidebarUser();
     return true;
   }
 
@@ -324,6 +325,7 @@
       me.initials = initials(payload.name);
       me.dailyMax = payload.dailyMax;
     }
+    updateSidebarUser();
   }
 
   async function updateTeamSettings() {
@@ -340,6 +342,15 @@
     await requireUser();
     const { error } = await sb.from('holidays').delete().eq('date', date);
     if (error) throw error;
+  }
+
+  function updateSidebarUser() {
+    const av = document.querySelector('.sb-user .av');
+    const name = document.querySelector('.sb-user b');
+    const cap = document.querySelector('.sb-user small');
+    if (av) av.textContent = initials(SETTINGS.userName);
+    if (name) name.textContent = SETTINGS.userName;
+    if (cap) cap.textContent = `${SETTINGS.dailyMax} units / day`;
   }
 
   window.WLStore = {
