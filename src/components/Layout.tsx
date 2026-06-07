@@ -233,24 +233,25 @@ export default function Layout({ theme, setTheme }: LayoutProps) {
         ))}
 
         {/* FAB center */}
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', paddingTop: 6 }}>
           <button
             onClick={() => navigate('/entry')}
             style={{
-              width: 52, height: 52,
+              width: 56, height: 56,
               borderRadius: '50%',
               background: 'var(--primary)',
               border: 'none',
               color: 'white',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(75,63,176,.4)',
-              marginBottom: 8,
+              boxShadow: '0 4px 16px rgba(75,63,176,.45)',
+              marginTop: -14,
             }}
             aria-label="New Entry"
           >
-            <Plus size={24} />
+            <Plus size={26} />
           </button>
+          <span style={{ fontSize: 10, fontWeight: 500, color: 'var(--text-3)', marginTop: 3 }}>New</span>
         </div>
 
         {/* Right 2 */}

@@ -9,6 +9,13 @@ interface MemberStat {
   entryCount: number
 }
 
+interface WorkBreakdown {
+  newWork: number
+  revisions: number
+  meetings: number
+  scopeFlags: number
+}
+
 function getWeekRange() {
   const now = new Date()
   const day = now.getDay()
@@ -27,6 +34,7 @@ export default function Team() {
   const [members, setMembers] = useState<MemberStat[]>([])
   const [teamCap, setTeamCap] = useState(0)
   const [teamUnits, setTeamUnits] = useState(0)
+  const [breakdown, setBreakdown] = useState<WorkBreakdown>({ newWork: 0, revisions: 0, meetings: 0, scopeFlags: 0 })
   const [dailyData, setDailyData] = useState<{ date: string; units: number }[]>([])
   const [loading, setLoading] = useState(true)
   const { from, to, workdays } = getWeekRange()
@@ -62,6 +70,12 @@ export default function Team() {
         cur.setDate(cur.getDate() + 1)
       }
 
+      const allE = entries as Entry[]
+      const newWork = allE.filter(e => !e.is_revision && e.job_type !== 'OTHER').reduce((s, e) => s + (e.manual_override ?? e.calculated_units), 0)
+      const revisions = allE.filter(e => e.is_revision).reduce((s, e) => s + (e.manual_override ?? e.calculated_units), 0)
+      const meetings = allE.filter(e => e.job_type === 'OTHER').reduce((s, e) => s + (e.manual_override ?? e.calculated_units), 0)
+      const scopeFlags = allE.filter(e => e.revision_cause === 'SCOPE_CREEP').length
+      setBreakdown({ newWork, revisions, meetings, scopeFlags })
       setMembers(stats)
       setTeamCap(totalCap)
       setTeamUnits(totalUnits)
@@ -86,10 +100,11 @@ export default function Team() {
     <div style={{ padding: '0 0 100px' }}>
       {/* Header */}
       <div style={{ padding: '24px 20px 16px' }}>
-        <h1 className="serif" style={{ fontSize: 28, margin: 0, lineHeight: 1.1 }}>
-          What we<br /><em>carried together</em>
+        <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 500, color: 'var(--primary)' }}>Team</p>
+        <h1 className="serif" style={{ fontSize: 28, margin: '0 0 4px', fontWeight: 400, lineHeight: 1.1 }}>
+          <em>What we carried together</em>
         </h1>
-        <p style={{ color: 'var(--text-2)', fontSize: 14, marginTop: 6 }}>This week · {from} – {to}</p>
+        <p style={{ color: 'var(--text-2)', fontSize: 13, margin: 0 }}>This week · {from} – {to}</p>
       </div>
 
       {/* Capacity card */}
@@ -125,6 +140,48 @@ export default function Team() {
           )}
         </div>
       </div>
+
+      {/* WHERE THE HOURS WENT */}
+      {teamUnits > 0 && (
+        <div style={{ padding: '0 16px 16px' }}>
+          <div className="card" style={{ padding: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 12 }}>Where the hours went</div>
+            {/* Stacked bar */}
+            <div style={{ display: 'flex', borderRadius: 6, overflow: 'hidden', height: 12, marginBottom: 12 }}>
+              {breakdown.newWork > 0 && (
+                <div style={{ flex: breakdown.newWork, background: 'var(--good)', minWidth: 4 }} title={`New work: ${breakdown.newWork.toFixed(1)}`} />
+              )}
+              {breakdown.revisions > 0 && (
+                <div style={{ flex: breakdown.revisions, background: 'var(--amber)', minWidth: 4 }} title={`Revisions: ${breakdown.revisions.toFixed(1)}`} />
+              )}
+              {breakdown.meetings > 0 && (
+                <div style={{ flex: breakdown.meetings, background: 'var(--primary)', minWidth: 4 }} title={`Meetings: ${breakdown.meetings.toFixed(1)}`} />
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 14, fontSize: 12, flexWrap: 'wrap' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--good)', display: 'inline-block' }} />
+                New work {teamUnits > 0 ? Math.round(breakdown.newWork / teamUnits * 100) : 0}%
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--amber)', display: 'inline-block' }} />
+                Revisions {teamUnits > 0 ? Math.round(breakdown.revisions / teamUnits * 100) : 0}%
+              </span>
+              {breakdown.meetings > 0 && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--primary)', display: 'inline-block' }} />
+                  Meetings {Math.round(breakdown.meetings / teamUnits * 100)}%
+                </span>
+              )}
+            </div>
+            {breakdown.scopeFlags > 0 && (
+              <p style={{ margin: '10px 0 0', fontSize: 13, color: 'var(--text-2)', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
+                <strong>{breakdown.scopeFlags}</strong> {breakdown.scopeFlags === 1 ? 'entry was' : 'entries were'} scope-creep — capacity spent on rework the team didn't initiate.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Member list */}
       <div style={{ padding: '0 16px 16px' }}>

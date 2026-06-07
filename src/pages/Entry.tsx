@@ -341,10 +341,11 @@ export default function Entry() {
   ]
 
   return (
-    <div style={{ padding: '20px 16px', maxWidth: 600, margin: '0 auto', paddingBottom: 100 }}>
-      <h1 className="serif" style={{ fontSize: 24, margin: '0 0 24px', fontWeight: 400 }}>
-        {id ? 'Edit Entry' : 'New Entry'}
-      </h1>
+    <div style={{ padding: '0 16px', maxWidth: 600, margin: '0 auto', paddingBottom: 100 }}>
+      <div style={{ padding: '24px 0 20px' }}>
+        <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 500, color: 'var(--primary)' }}>{id ? 'Edit entry' : 'New entry'}</p>
+        <h1 className="serif" style={{ fontSize: 28, margin: 0, fontWeight: 400 }}><em>{id ? 'Update this job' : 'Log a piece of work'}</em></h1>
+      </div>
 
       {/* 1 — DATE */}
       <div className="card" style={{ padding: '16px 18px', marginBottom: 12 }}>

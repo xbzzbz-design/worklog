@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Flag, Star, Plus } from 'lucide-react'
+import { Flag, Star } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import type { Entry, AppUser } from '../lib/types'
 import { JOB_TYPES } from '../lib/types'
@@ -68,28 +68,56 @@ function ProgressRing({
   )
 }
 
-function EntryCard({ entry }: { entry: Entry }) {
+function initials(name: string) {
+  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+}
+
+const AVATAR_COLORS = [
+  ['#e0e7ff','#4338ca'], ['#dcfce7','#16a34a'], ['#fce7f3','#9d174d'],
+  ['#e0f2fe','#0369a1'], ['#fef3c7','#d97706'], ['#ede9ff','#4b3fb0'],
+]
+function avatarColor(name: string) {
+  let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) & 0xffff
+  return AVATAR_COLORS[h % AVATAR_COLORS.length]
+}
+
+function EntryCard({ entry, isNew }: { entry: Entry; isNew?: boolean }) {
   const jt = JOB_TYPES[entry.job_type]
+  const clientName = entry.client?.name ?? '—'
+  const [bg, fg] = clientName === '—' ? ['var(--surface-2)', 'var(--text-3)'] : avatarColor(clientName)
   return (
     <div className="card" style={{
       padding: '10px 14px',
       display: 'flex', alignItems: 'center', gap: 10,
     }}>
-      <span className={`jt-${entry.job_type}`} style={{
-        fontSize: 11, fontWeight: 600,
-        padding: '3px 8px', borderRadius: 99,
-        whiteSpace: 'nowrap', flexShrink: 0,
+      {/* Avatar */}
+      <div style={{
+        width: 36, height: 36, borderRadius: '50%',
+        background: bg, color: fg,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 12, fontWeight: 700, flexShrink: 0,
       }}>
-        {jt.short}
-      </span>
-      <span style={{ fontSize: 13, color: 'var(--text-2)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {entry.client?.name ?? '—'}
-      </span>
-      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginLeft: 'auto', flexShrink: 0 }}>
-        {entry.calculated_units.toFixed(2)}
-      </span>
-      {entry.is_flagged && <Flag size={12} style={{ color: 'var(--bad)', flexShrink: 0 }} />}
-      {entry.is_starred && <Star size={12} style={{ color: 'var(--amber)', flexShrink: 0 }} />}
+        {clientName === '—' ? '?' : initials(clientName)}
+      </div>
+      {/* Middle */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {clientName}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+          <span className={`jt-${entry.job_type}`} style={{ fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 99 }}>
+            {jt.short}
+          </span>
+          {isNew && <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-3)', background: 'var(--surface-2)', padding: '1px 6px', borderRadius: 99 }}>New</span>}
+          {entry.is_revision && <span style={{ fontSize: 10, color: 'var(--amber)' }}>Rev</span>}
+        </div>
+      </div>
+      {/* Right */}
+      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 700 }}>{(entry.manual_override ?? entry.calculated_units).toFixed(2)}</div>
+        {entry.is_starred && <Star size={11} style={{ color: 'var(--amber)' }} />}
+        {entry.is_flagged && <Flag size={11} style={{ color: 'var(--bad)' }} />}
+      </div>
     </div>
   )
 }
@@ -171,127 +199,108 @@ export default function Home() {
     )
   }
 
+  function heroText() {
+    if (todayUnits === 0) return 'Fresh start — log your first piece.'
+    if (todayUnits > dailyMax * 1.2) return `That's a big day — ${todayUnits.toFixed(2)} units logged.`
+    if (todayUnits > dailyMax * 0.8) return `Solid work today — ${todayUnits.toFixed(2)} units.`
+    return `Good start — ${todayUnits.toFixed(2)} units so far.`
+  }
+
   return (
-    <div style={{ padding: '20px 16px', maxWidth: 640, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ padding: '0 0 100px', maxWidth: 640, margin: '0 auto' }}>
       <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
 
-      {/* Greeting */}
-      <h1 className="serif" style={{ fontSize: 26, margin: 0, fontWeight: 400 }}>
-        {greeting(user?.name ?? 'there')} 👋
-      </h1>
-
-      {/* Today ring */}
-      <div className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '.06em' }}>
-          Today
+      {/* Header area */}
+      <div style={{ padding: '20px 16px 0' }}>
+        <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 500, color: 'var(--primary)' }}>
+          {greeting(user?.name ?? 'there')}
         </p>
-        <ProgressRing value={todayUnits} max={dailyMax} />
-        {todayUnits === 0 && (
-          <p style={{ color: 'var(--text-3)', fontSize: 13, margin: 0 }}>No entries yet — log your first piece today</p>
-        )}
-        {todayUnits > dailyMax && (
-          <p style={{ color: 'var(--bad)', fontSize: 13, margin: 0, fontWeight: 500 }}>
-            Over daily capacity — consider flagging or spreading work
-          </p>
-        )}
-        {todayUnits > 0 && todayUnits <= dailyMax && (
-          <p style={{ color: 'var(--good)', fontSize: 13, margin: 0, fontWeight: 500 }}>
-            Within capacity — great work
-          </p>
-        )}
+        <h1 className="serif" style={{ fontSize: 28, margin: '0 0 20px', fontWeight: 400, lineHeight: 1.2 }}>
+          <em>{heroText()}</em>
+        </h1>
       </div>
 
-      {/* Affirmation */}
-      <div style={{
-        padding: '14px 18px',
-        background: 'var(--primary-light)',
-        borderRadius: 'var(--radius)',
-        borderLeft: '3px solid var(--primary)',
-      }}>
-        <p style={{ margin: 0, fontSize: 14, color: 'var(--primary)', lineHeight: 1.6, fontStyle: 'italic' }}>
-          "Your work is visible here — even on the days no one says thank you."
-        </p>
+      {/* Today ring card */}
+      <div style={{ padding: '0 16px 16px' }}>
+        <div className="card" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 20 }}>
+          <ProgressRing value={todayUnits} max={dailyMax} size={120} />
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.06em' }}>Today</p>
+            <p style={{ margin: '0 0 6px', fontSize: 14, color: 'var(--text-2)', lineHeight: 1.4 }}>
+              {todayUnits === 0
+                ? 'Nothing logged yet'
+                : `You've logged ${todayUnits.toFixed(2)} units across ${todayEntries.length} job${todayEntries.length !== 1 ? 's' : ''}.`}
+            </p>
+            {todayUnits > dailyMax && (
+              <span style={{ fontSize: 12, fontWeight: 600, background: 'var(--bad-bg)', color: 'var(--bad)', borderRadius: 99, padding: '3px 10px', display: 'inline-block' }}>
+                {(todayUnits - dailyMax).toFixed(2)} over your daily max
+              </span>
+            )}
+            {todayUnits > 0 && todayUnits <= dailyMax && (
+              <span style={{ fontSize: 12, fontWeight: 600, background: 'var(--good-bg)', color: 'var(--good)', borderRadius: 99, padding: '3px 10px', display: 'inline-block' }}>
+                Within capacity
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Today's entries */}
-      <section>
+      <div style={{ padding: '0 16px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Today's entries</h2>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.08em' }}>Today's log</span>
           <button
-            onClick={() => navigate('/entry')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 4,
-              background: 'var(--primary-light)', color: 'var(--primary)',
-              border: 'none', borderRadius: 8, padding: '6px 12px',
-              fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-            }}
+            onClick={() => navigate('/timeline')}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', fontSize: 13, fontWeight: 600, padding: 0, fontFamily: 'inherit' }}
           >
-            <Plus size={14} /> Add
+            View all →
           </button>
         </div>
         {todayEntries.length === 0 ? (
-          <div style={{
-            padding: '20px 0', textAlign: 'center',
-            color: 'var(--text-3)', fontSize: 14,
-          }}>
+          <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-3)', fontSize: 14 }}>
             Nothing logged yet today.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {todayEntries.map(e => <EntryCard key={e.id} entry={e} />)}
+            {todayEntries.map((e, i) => <EntryCard key={e.id} entry={e} isNew={i === 0} />)}
           </div>
         )}
-      </section>
+      </div>
 
       {/* Month summary */}
-      <section>
-        <h2 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 600 }}>This month</h2>
+      <div style={{ padding: '0 16px 16px' }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.08em', display: 'block', marginBottom: 10 }}>This month</span>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           <div className="card" style={{ padding: '14px 16px' }}>
-            <p style={{ margin: '0 0 4px', fontSize: 12, color: 'var(--text-3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em' }}>Total units</p>
-            <p style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>{monthUnits.toFixed(1)}</p>
+            <p style={{ margin: '0 0 4px', fontSize: 12, color: 'var(--text-3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em' }}>Units</p>
+            <p style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>{monthUnits.toFixed(1)}</p>
           </div>
           <div className="card" style={{ padding: '14px 16px' }}>
             <p style={{ margin: '0 0 4px', fontSize: 12, color: 'var(--text-3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em' }}>Pieces</p>
-            <p style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>{monthEntries.length}</p>
+            <p style={{ margin: 0, fontSize: 28, fontWeight: 700 }}>{monthEntries.length}</p>
           </div>
         </div>
         {comparison && (
-          <div style={{
-            marginTop: 10,
-            padding: '10px 14px',
-            background: 'var(--good-bg)',
-            borderRadius: 10,
-            fontSize: 13,
-            color: 'var(--good)',
-            fontWeight: 500,
-          }}>
+          <div style={{ marginTop: 10, padding: '10px 14px', background: comparison.good ? 'var(--good-bg)' : 'var(--primary-light)', borderRadius: 10, fontSize: 13, color: comparison.good ? 'var(--good)' : 'var(--primary)', fontWeight: 500 }}>
             {comparison.text}
           </div>
         )}
-      </section>
+      </div>
 
       {/* Starred gallery */}
       {starred.length > 0 && (
-        <section>
-          <h2 style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Star size={15} style={{ color: 'var(--amber)' }} /> Starred this month
-          </h2>
-          <div style={{
-            display: 'flex', gap: 10, overflowX: 'auto',
-            paddingBottom: 4,
-          }}>
+        <div style={{ padding: '0 16px' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.08em', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 10 }}>
+            <Star size={12} style={{ color: 'var(--amber)' }} /> Starred this month
+          </span>
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
             {starred.map(e => (
-              <div key={e.id} className="card" style={{
-                minWidth: 160, padding: '10px 14px', flexShrink: 0,
-              }}>
-                <span className={`jt-${e.job_type}`} style={{
-                  fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 99, display: 'inline-block', marginBottom: 6,
-                }}>
+              <div key={e.id} className="card" style={{ minWidth: 160, padding: '10px 14px', flexShrink: 0 }}>
+                <span className={`jt-${e.job_type}`} style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 99, display: 'inline-block', marginBottom: 6 }}>
                   {JOB_TYPES[e.job_type].short}
                 </span>
                 <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{e.client?.name ?? '—'}</p>
-                <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-3)' }}>{e.calculated_units.toFixed(2)} units</p>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-3)' }}>{(e.manual_override ?? e.calculated_units).toFixed(2)} units</p>
                 {e.note && (
                   <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--text-2)', lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                     {e.note}
@@ -300,7 +309,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </section>
+        </div>
       )}
     </div>
   )

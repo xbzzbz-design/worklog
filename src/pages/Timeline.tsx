@@ -386,8 +386,11 @@ export default function Timeline() {
   })
 
   return (
-    <div style={{ padding: '20px 16px', maxWidth: 640, margin: '0 auto' }}>
-      <h1 className="serif" style={{ fontSize: 24, margin: '0 0 16px', fontWeight: 400 }}>Timeline</h1>
+    <div style={{ padding: '0 16px 100px', maxWidth: 640, margin: '0 auto' }}>
+      <div style={{ padding: '24px 0 16px' }}>
+        <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 500, color: 'var(--primary)' }}>Timeline</p>
+        <h1 className="serif" style={{ fontSize: 28, margin: 0, fontWeight: 400 }}><em>You showed up</em></h1>
+      </div>
 
       {/* View toggle */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
