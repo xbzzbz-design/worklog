@@ -183,12 +183,14 @@ function pickAffirmation() {
 }
 
 function portfolioShot(e) {
-  const hasSnap = !!e.snap;
+  const isUrl = e.snap && (e.snap.startsWith('http') || e.snap.startsWith('/'));
   return `<div class="shot" data-entry="${e.id}">
     <div class="thumb">
-      ${hasSnap
-        ? `<div class="ph">▦ snap<br>${e.snap}</div>`
-        : `<div class="ph">${ic('link')} drive link</div>`}
+      ${isUrl
+        ? `<img src="${e.snap}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:block">`
+        : e.snap
+          ? `<div class="ph">${ic('image')} snap</div>`
+          : `<div class="ph">${ic('link')} drive link</div>`}
       <div class="star">${ic('star','fill="currentColor"')}</div>
     </div>
     <div class="cap">

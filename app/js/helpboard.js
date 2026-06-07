@@ -58,7 +58,7 @@ function helpCard(h) {
       + (mine ? `<button class="hc-btn" data-resolve="${h.id}">${ic('check')} Resolve &amp; thank</button>`
               : iHelped ? `<button class="hc-btn soft" data-logtime="${h.id}">${ic('clock')} Log my time</button>` : '');
   } else {
-    foot = `<span class="hc-hours">${ic('clock')} ~${u(h.hours)}h</span>`
+    foot = `<span class="hc-hours">${ic('layers')} ~${u(h.hours)} units</span>`
       + (mine ? `<button class="hc-btn cancel" data-cancel="${h.id}">${ic('x')} Cancel</button>`
               : `<button class="hc-btn" data-claim="${h.id}">${ic('hand-helping')} Lend a hand</button>`);
   }
@@ -176,8 +176,8 @@ function openAskHelp() {
         <div class="field"><label>A little more</label>
           <input id="askNeed" class="ask-in" placeholder="e.g. another pair of hands on 3 sizes"></div>
         <div class="ask-row">
-          <div class="field" style="flex:1"><label>Hours</label>
-            <input id="askHours" class="ask-in" type="number" step="0.5" value="1" min="0.5"></div>
+          <div class="field" style="flex:1"><label>Units needed</label>
+            <input id="askHours" class="ask-in" type="number" step="0.25" value="1" min="0.25"></div>
           <div class="field" style="flex:1"><label>Urgency</label>
             <select id="askUrg" class="ask-in"><option value="today">Needed today</option><option value="soon">When you can</option></select></div>
         </div>

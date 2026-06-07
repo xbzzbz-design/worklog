@@ -5,21 +5,27 @@
   "start_url": "/worklog/",
   "scope": "/worklog/",
   "display": "standalone",
-  "background_color": "#faf9f7",
+  "background_color": "#4b3fb0",
   "theme_color": "#4b3fb0",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/worklog/icon-192.png",
+      "src": "/worklog/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/worklog/icon-512.png",
+      "src": "/worklog/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/worklog/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
