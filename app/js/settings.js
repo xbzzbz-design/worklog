@@ -173,17 +173,20 @@ function wireSettings(root) {
     markSyncing();
     await saveTeam();
   }));
-  root.querySelectorAll('[data-holx]').forEach(b=>b.addEventListener('click',async ()=>{
+  root.querySelectorAll('[data-holx]').forEach(b=>b.addEventListener('click',()=> runAction(b, async ()=>{
     const i = HOLIDAYS.findIndex(h=>h.date===b.dataset.holx);
     if (i<0) return;
+    const removed = HOLIDAYS[i];
+    HOLIDAYS.splice(i,1); // optimistic
+    markSyncing();
+    rerenderScreen('settings');
     try {
-      if (window.WLStore && window.WLStore.deleteHoliday) await window.WLStore.deleteHoliday(b.dataset.holx);
-      HOLIDAYS.splice(i,1);
-      markSyncing();
-      rerenderScreen('settings');
+      if (window.WLStore && window.WLStore.deleteHoliday) await window.WLStore.deleteHoliday(removed.date);
+      markSynced();
     } catch (err) {
-      console.error(err);
-      toast('Could not delete holiday.', 'info');
+      HOLIDAYS.splice(Math.min(i, HOLIDAYS.length), 0, removed); // rollback
+      rerenderScreen('settings');
+      throw err;
     }
-  }));
+  }, 'Could not delete holiday')));
 }

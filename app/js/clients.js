@@ -37,25 +37,18 @@ function openClientCreate(onCreated) {
   el.querySelector('#clientCancel').addEventListener('click', close);
   const input = el.querySelector('#newClientName');
   setTimeout(()=>input.focus(), 50);
-  el.querySelector('#clientSave').addEventListener('click', async () => {
+  el.querySelector('#clientSave').addEventListener('click', (ev) => {
     const name = input.value.trim();
     if (!name) { input.focus(); return; }
-    const btn = el.querySelector('#clientSave');
-    btn.disabled = true;
-    try {
+    runAction(ev.currentTarget, async () => {
       const client = window.WLStore && window.WLStore.createClient
         ? await window.WLStore.createClient(name)
         : (() => { const c = { id:'c'+Date.now(), name, archived:false }; CLIENTS.push(c); return c; })();
       close();
-      toast('Client added', 'good');
       if (onCreated) onCreated(client);
       else rerenderScreen('clients');
-    } catch (err) {
-      console.error(err);
-      btn.disabled = false;
-      const msg = window.WLStoreErrorText ? window.WLStoreErrorText(err) : 'try again';
-      toast(`Could not add client: ${msg}`, 'info');
-    }
+      toast('Client added', 'good');
+    }, 'Could not add client');
   });
 }
 
@@ -150,19 +143,20 @@ function wireClientDetail(root) {
   root.querySelectorAll('[data-entry]').forEach(el=>el.addEventListener('click',()=>openDetail(el.dataset.entry)));
   root.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.go)));
   const ab = root.querySelector('[data-archive]');
-  if (ab) ab.addEventListener('click', async ()=>{
+  if (ab) ab.addEventListener('click', ()=> runAction(ab, async ()=>{
     const c=CLIENTS.find(x=>x.id===ab.dataset.archive);
     if (!c) return;
     const next = !c.archived;
+    // optimistic flip + redraw, roll back if the server rejects
+    c.archived = next;
+    go('clientDetail');
     try {
       if (window.WLStore && window.WLStore.setClientArchived) await window.WLStore.setClientArchived(c.id, next);
-      else c.archived = next;
       toast(next?'Client archived':'Client restored','info');
-      go('clientDetail');
     } catch (err) {
-      console.error(err);
-      const msg = window.WLStoreErrorText ? window.WLStoreErrorText(err) : 'try again';
-      toast(`Could not update client: ${msg}`, 'info');
+      c.archived = !next;
+      go('clientDetail');
+      throw err;
     }
-  });
+  }, 'Could not update client'));
 }

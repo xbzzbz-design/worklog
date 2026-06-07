@@ -166,49 +166,49 @@ function openDaySheet(date) {
   refreshIcons();
   m.querySelector('.dm-overlay').addEventListener('click', closeDetail);
   m.querySelectorAll('[data-entry]').forEach(el=>el.addEventListener('click',()=>openDetail(el.dataset.entry)));
-  m.querySelectorAll('[data-leave]').forEach(b=>b.addEventListener('click', async ()=>{
+  m.querySelectorAll('[data-leave]').forEach(b=>b.addEventListener('click', ()=> runAction(b, async ()=>{
     const t = b.dataset.leave;
     const arr = myLeave();
+    const prev = arr.slice(); // snapshot for rollback
+    // optimistic: update memory + close the sheet immediately (no hang)
     const i = arr.findIndex(l=>l.date===date);
+    if (i>=0) arr.splice(i,1);
+    if (t) arr.push({ date, type:t });
     markSyncing();
+    closeDetail();
+    rerenderScreen('timeline');
     try {
-      if (t) {
-        if (window.WLStore && window.WLStore.setLeave) await window.WLStore.setLeave(date, t);
-        if (i>=0) arr.splice(i,1);
-        arr.push({ date, type:t });
-      } else {
-        if (window.WLStore && window.WLStore.clearLeave) await window.WLStore.clearLeave(date);
-        if (i>=0) arr.splice(i,1);
-      }
+      if (t) { if (window.WLStore && window.WLStore.setLeave) await window.WLStore.setLeave(date, t); }
+      else { if (window.WLStore && window.WLStore.clearLeave) await window.WLStore.clearLeave(date); }
       markSynced();
-      closeDetail();
-      rerenderScreen('timeline');
       toast(t?`${LEAVE_TYPES[t].label} marked — synced to the team`:'Leave cleared', t?'good':'info');
     } catch (err) {
-      console.error(err);
-      toast('Could not save leave. Try again.', 'info');
-    }
-  }));
-  const hb = m.querySelector('#dsHoliday');
-  if (hb) hb.addEventListener('click', async ()=>{
-    markSyncing();
-    try {
-      if (isHolidayDate(date)) {
-        if (window.WLStore && window.WLStore.deleteHoliday) await window.WLStore.deleteHoliday(date);
-        const i=HOLIDAYS.findIndex(h=>h.date===date); if(i>=0) HOLIDAYS.splice(i,1);
-        toast('Holiday removed','info');
-      } else {
-        let row = { date, name:'Day off' };
-        if (window.WLStore && window.WLStore.createHoliday) row = await window.WLStore.createHoliday(date, 'Day off');
-        HOLIDAYS.push(row);
-        toast('Marked as holiday — excluded from capacity','good');
-      }
+      arr.splice(0, arr.length, ...prev); // rollback
       markSynced();
-      closeDetail();
       rerenderScreen('timeline');
-    } catch (err) {
-      console.error(err);
-      toast('Could not save holiday. Try again.', 'info');
+      throw err;
     }
-  });
+  }, 'Could not save leave')));
+  const hb = m.querySelector('#dsHoliday');
+  if (hb) hb.addEventListener('click', ()=> runAction(hb, async ()=>{
+    const prev = HOLIDAYS.slice(); // snapshot for rollback
+    const removing = isHolidayDate(date);
+    // optimistic
+    if (removing) { const i=HOLIDAYS.findIndex(h=>h.date===date); if(i>=0) HOLIDAYS.splice(i,1); }
+    else { HOLIDAYS.push({ date, name:'Day off' }); }
+    markSyncing();
+    closeDetail();
+    rerenderScreen('timeline');
+    try {
+      if (removing) { if (window.WLStore && window.WLStore.deleteHoliday) await window.WLStore.deleteHoliday(date); }
+      else { if (window.WLStore && window.WLStore.createHoliday) { const row = await window.WLStore.createHoliday(date, 'Day off'); const h = HOLIDAYS.find(x=>x.date===date); if (h && row && row.id) h.id = row.id; } }
+      markSynced();
+      toast(removing?'Holiday removed':'Marked as holiday — excluded from capacity', removing?'info':'good');
+    } catch (err) {
+      HOLIDAYS.splice(0, HOLIDAYS.length, ...prev); // rollback
+      markSynced();
+      rerenderScreen('timeline');
+      throw err;
+    }
+  }, 'Could not save holiday'));
 }
