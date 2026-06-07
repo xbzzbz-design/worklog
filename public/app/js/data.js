@@ -265,6 +265,8 @@ let HOLIDAYS = [
 const TEAM_SETTINGS = {
   workdays: [1,2,3,4,5],        // Mon–Fri (0=Sun … 6=Sat)
   holidayAddOn: 1.0,            // bonus units for working ON a holiday
+  ratesUpdatedBy: null,         // user id of whoever last changed rates/add-on
+  ratesUpdatedAt: null,         // ISO timestamp of that change
 };
 // personal leave — each person marks their OWN; no admin needed. Syncs to team capacity.
 // keyed by member id → array of {date, type}. type: 'sick' | 'vacation'
