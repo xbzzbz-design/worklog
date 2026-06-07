@@ -337,4 +337,8 @@
     updateProfile, updateTeamSettings, deleteHoliday,
     supabase: sb
   };
+  window.WLStoreErrorText = (err) => {
+    if (!err) return 'Unknown error';
+    return err.message || err.details || err.code || String(err);
+  };
 })();

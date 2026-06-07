@@ -206,7 +206,8 @@ function wireEntry(root) {
       console.error(err);
       btn.disabled = false;
       btn.classList.remove('loading');
-      toast('Could not save. Check connection and try again.', 'info');
+      const msg = window.WLStoreErrorText ? window.WLStoreErrorText(err) : 'check connection and try again';
+      toast(`Could not save: ${msg}`, 'info');
       return;
     }
 

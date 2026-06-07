@@ -54,7 +54,8 @@ function openClientCreate(onCreated) {
     } catch (err) {
       console.error(err);
       btn.disabled = false;
-      toast('Could not add client. Try again.', 'info');
+      const msg = window.WLStoreErrorText ? window.WLStoreErrorText(err) : 'try again';
+      toast(`Could not add client: ${msg}`, 'info');
     }
   });
 }
@@ -161,7 +162,8 @@ function wireClientDetail(root) {
       go('clientDetail');
     } catch (err) {
       console.error(err);
-      toast('Could not update client. Try again.', 'info');
+      const msg = window.WLStoreErrorText ? window.WLStoreErrorText(err) : 'try again';
+      toast(`Could not update client: ${msg}`, 'info');
     }
   });
 }

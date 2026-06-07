@@ -342,7 +342,8 @@ async function init() {
       await window.WLStore.bootstrap();
     } catch (err) {
       console.error('WorkLog bootstrap failed', err);
-      toast('Could not load live data. Showing cached design state.', 'info');
+      const msg = window.WLStoreErrorText ? window.WLStoreErrorText(err) : 'live data failed';
+      toast(`Could not load live data: ${msg}`, 'info');
     }
   }
   document.querySelectorAll('#modeSeg button').forEach(b =>
