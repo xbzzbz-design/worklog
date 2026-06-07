@@ -182,7 +182,9 @@ function openDetail(id) {
   m.classList.add('open');
   refreshIcons();
   m.querySelector('.dm-overlay').addEventListener('click', closeDetail);
+  let detailBusy = false; // guard against rapid double-taps on edit/delete
   m.querySelector('#dmEdit').addEventListener('click', () => {
+    if (detailBusy) return; detailBusy = true;
     draft = Object.assign(freshDraft(), {
       clientId: e.clientId,
       jobType: e.jobType,
@@ -215,22 +217,26 @@ function openDetail(id) {
     toast('Entry loaded into the form', 'info');
   });
   m.querySelector('#dmDelete').addEventListener('click', async () => {
+    if (detailBusy) return; detailBusy = true;
     const idx = ENTRIES.findIndex(x=>x.id===id);
-    if (idx<0) return;
+    if (idx<0) { closeDetail(); return; }
     const removed = ENTRIES[idx];
+    // Optimistic: remove from memory + UI right away so the sheet can't hang and
+    // can't be tapped again. Roll back only if the server delete fails.
+    ENTRIES.splice(idx,1);
+    markSyncing();
+    closeDetail();
+    go(currentScreen);
     try {
       if (window.WLStore && window.WLStore.deleteEntry) await window.WLStore.deleteEntry(id);
-      ENTRIES.splice(idx,1);
-      markSyncing();
-      closeDetail();
-      go(currentScreen);
+      markSynced();
       undoToast('Entry deleted', async () => {
         try {
           const restored = window.WLStore && window.WLStore.saveEntry
             ? await window.WLStore.saveEntry(removed)
             : removed;
           if (!ENTRIES.find(x => x.id === restored.id)) ENTRIES.splice(Math.min(idx, ENTRIES.length), 0, restored);
-          markSyncing();
+          markSynced();
           go(currentScreen);
         } catch (err) {
           console.error(err);
@@ -239,6 +245,10 @@ function openDetail(id) {
       });
     } catch (err) {
       console.error(err);
+      // rollback the optimistic removal
+      if (!ENTRIES.find(x => x.id === removed.id)) ENTRIES.splice(Math.min(idx, ENTRIES.length), 0, removed);
+      markSynced();
+      go(currentScreen);
       toast('Could not delete entry. Try again.', 'info');
     }
   });
