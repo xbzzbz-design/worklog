@@ -10,6 +10,23 @@
 
   window.WL_SB = sb;
   window.WL_CURRENT_USER_ID = null;
+  let receivedParentSession = false;
+
+  window.addEventListener('message', async (event) => {
+    if (event.origin !== window.location.origin) return;
+    const msg = event.data || {};
+    if (msg.type !== 'WL_SESSION' || !sb || !msg.access_token || !msg.refresh_token) return;
+    try {
+      receivedParentSession = true;
+      await sb.auth.setSession({ access_token: msg.access_token, refresh_token: msg.refresh_token });
+      if (window.WL && window.WL.screen) {
+        await bootstrap();
+        window.WL.go(window.WL.screen);
+      }
+    } catch (err) {
+      console.error('Could not accept parent session', err);
+    }
+  });
 
   const fromDbEntry = (r) => ({
     id: r.id,
@@ -98,16 +115,48 @@
     return (name || 'Designer').split(/\s+/).map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
   }
 
+  async function waitForParentSession() {
+    for (let i = 0; i < 12; i++) {
+      if (receivedParentSession) return;
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+
+  async function ensureProfile(user) {
+    const fallbackName = (user.user_metadata && user.user_metadata.name) || (user.email ? user.email.split('@')[0] : 'Team Member');
+    const { data: existing } = await sb.from('users').select('*').eq('id', user.id).maybeSingle();
+    if (existing) return existing;
+    const { data, error } = await sb.from('users')
+      .insert({ id: user.id, name: fallbackName })
+      .select('*')
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async function requireUser() {
+    let { data: auth } = await sb.auth.getUser();
+    let user = auth && auth.user;
+    if (!user) {
+      await waitForParentSession();
+      auth = (await sb.auth.getUser()).data;
+      user = auth && auth.user;
+    }
+    if (!user) throw new Error('Not signed in');
+    await ensureProfile(user);
+    window.WL_CURRENT_USER_ID = user.id;
+    return user;
+  }
+
   async function bootstrap() {
     clearPrototypeData();
     if (!sb) throw new Error('Supabase client failed to load');
-    const { data: auth } = await sb.auth.getUser();
-    const user = auth && auth.user;
+    let user = null;
+    try { user = await requireUser(); } catch (_) {}
     if (!user) {
       window.parent && window.parent.postMessage({ type: 'WL_SIGNED_OUT' }, window.location.origin);
       return false;
     }
-    window.WL_CURRENT_USER_ID = user.id;
 
     const [meRes, usersRes, clientsRes, entriesRes, holidaysRes, leaveRes, settingsRes, helpRes] = await Promise.all([
       sb.from('users').select('*').eq('id', user.id).single(),
@@ -157,9 +206,7 @@
   }
 
   async function saveEntry(entry) {
-    const { data: auth } = await sb.auth.getUser();
-    const user = auth && auth.user;
-    if (!user) throw new Error('Not signed in');
+    const user = await requireUser();
     const payload = toDbEntry(entry, user.id);
     const { data, error } = await sb.from('entries').insert(payload).select('*').single();
     if (error) throw error;
@@ -170,9 +217,7 @@
   }
 
   async function updateEntry(id, entry) {
-    const { data: auth } = await sb.auth.getUser();
-    const user = auth && auth.user;
-    if (!user) throw new Error('Not signed in');
+    const user = await requireUser();
     const payload = toDbEntry(entry, user.id);
     const { data, error } = await sb.from('entries').update(payload).eq('id', id).select('*').single();
     if (error) throw error;
@@ -185,11 +230,13 @@
   }
 
   async function deleteEntry(id) {
+    await requireUser();
     const { error } = await sb.from('entries').delete().eq('id', id);
     if (error) throw error;
   }
 
   async function createClient(name) {
+    await requireUser();
     const { data, error } = await sb.from('clients').insert({ name, archived: false }).select('*').single();
     if (error) throw error;
     const client = { id: data.id, name: data.name, archived: !!data.archived };
@@ -199,6 +246,7 @@
   }
 
   async function setClientArchived(id, archived) {
+    await requireUser();
     const { error } = await sb.from('clients').update({ archived }).eq('id', id);
     if (error) throw error;
     const client = CLIENTS.find(c => c.id === id);
@@ -207,9 +255,7 @@
   }
 
   async function createHelpRequest(payload) {
-    const { data: auth } = await sb.auth.getUser();
-    const user = auth && auth.user;
-    if (!user) throw new Error('Not signed in');
+    const user = await requireUser();
     const { data, error } = await sb.from('help_requests').insert({
       author_id: user.id,
       client_id: payload.clientId || null,
@@ -226,9 +272,7 @@
   }
 
   async function claimHelpRequest(id) {
-    const { data: auth } = await sb.auth.getUser();
-    const user = auth && auth.user;
-    if (!user) throw new Error('Not signed in');
+    const user = await requireUser();
     const { data, error } = await sb.from('help_requests').update({
       status: 'claimed',
       handled_by: user.id,
@@ -241,6 +285,7 @@
   }
 
   async function resolveHelpRequest(id, thanks) {
+    await requireUser();
     const { data, error } = await sb.from('help_requests').update({
       status: 'resolved',
       thanks_message: thanks || 'Thank you.',
@@ -254,6 +299,7 @@
   }
 
   async function deleteHelpRequest(id) {
+    await requireUser();
     const { error } = await sb.from('help_requests').delete().eq('id', id);
     if (error) throw error;
     const idx = HELP_REQUESTS.findIndex(h => h.id === id);
@@ -261,9 +307,7 @@
   }
 
   async function updateProfile(payload) {
-    const { data: auth } = await sb.auth.getUser();
-    const user = auth && auth.user;
-    if (!user) throw new Error('Not signed in');
+    const user = await requireUser();
     const { error } = await sb.from('users').update({
       name: payload.name,
       daily_max: payload.dailyMax,
@@ -272,6 +316,7 @@
   }
 
   async function updateTeamSettings() {
+    await requireUser();
     const { error } = await sb.from('team_settings').update({
       workdays: TEAM_SETTINGS.workdays.slice().sort(),
       holiday_addon: TEAM_SETTINGS.holidayAddOn,
@@ -281,6 +326,7 @@
   }
 
   async function deleteHoliday(date) {
+    await requireUser();
     const { error } = await sb.from('holidays').delete().eq('date', date);
     if (error) throw error;
   }
