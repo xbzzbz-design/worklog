@@ -174,10 +174,13 @@ function wireEntry(root) {
     }
   };
 
-  $('#snapBtn').addEventListener('click', () => document.getElementById('_snapInput').click());
-  $('#uploadBtn').addEventListener('click', () => document.getElementById('_uploadInput').click());
-  document.getElementById('_snapInput').addEventListener('change', e => handleImageFile(e.target.files[0]));
-  document.getElementById('_uploadInput').addEventListener('change', e => handleImageFile(e.target.files[0]));
+  const snapInput = document.getElementById('_snapInput');
+  const uploadInput = document.getElementById('_uploadInput');
+  $('#snapBtn').addEventListener('click', () => snapInput.click());
+  $('#uploadBtn').addEventListener('click', () => uploadInput.click());
+  // assign (not addEventListener) so re-rendering the form never stacks duplicate uploads
+  snapInput.onchange = e => { handleImageFile(e.target.files[0]); e.target.value = ''; };
+  uploadInput.onchange = e => { handleImageFile(e.target.files[0]); e.target.value = ''; };
   $('#driveField').addEventListener('input', (e)=>{ draft.driveLink = e.target.value; saveDraft(); });
 
   /* --- STEP 10 flag / star --- */
