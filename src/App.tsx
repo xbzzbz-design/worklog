@@ -3,17 +3,48 @@ import { supabase } from './lib/supabase'
 import type { Session } from '@supabase/supabase-js'
 import Login from './pages/Login'
 
-const runtimeVersion = '2026-06-08-02'
+const runtimeVersion = '2026-06-08-03'
 
 export default function App() {
   const [session, setSession] = useState<Session | null | undefined>(undefined)
   const [theme] = useState(() => localStorage.getItem('wl-theme') || 'light')
   const runtimeRef = useRef<HTMLIFrameElement | null>(null)
+  const deferredPrompt = useRef<any>(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session))
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => subscription.unsubscribe()
+  }, [])
+
+  // PWA install: capture the native prompt here (top window) and let the in-iframe
+  // install button request it via postMessage.
+  useEffect(() => {
+    const onBIP = (e: Event) => { e.preventDefault(); deferredPrompt.current = e }
+    const onInstalled = () => {
+      deferredPrompt.current = null
+      runtimeRef.current?.contentWindow?.postMessage({ type: 'WL_INSTALLED' }, window.location.origin)
+    }
+    const onMsg = async (ev: MessageEvent) => {
+      if (ev.origin !== window.location.origin) return
+      if (ev.data?.type !== 'WL_INSTALL_REQUEST') return
+      const dp = deferredPrompt.current as any
+      if (dp && typeof dp.prompt === 'function') {
+        dp.prompt()
+        try { await dp.userChoice } catch { /* ignore */ }
+        deferredPrompt.current = null
+      } else {
+        runtimeRef.current?.contentWindow?.postMessage({ type: 'WL_INSTALL_UNAVAILABLE' }, window.location.origin)
+      }
+    }
+    window.addEventListener('beforeinstallprompt', onBIP)
+    window.addEventListener('appinstalled', onInstalled)
+    window.addEventListener('message', onMsg)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBIP)
+      window.removeEventListener('appinstalled', onInstalled)
+      window.removeEventListener('message', onMsg)
+    }
   }, [])
 
   useEffect(() => {

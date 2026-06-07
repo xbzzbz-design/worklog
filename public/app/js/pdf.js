@@ -10,10 +10,13 @@ function openPdfPreview() {
   // build pages array, footer added per page
   const pages = [];
 
+  // inline SVG so the brand mark renders in the print window (no lucide there)
+  const layersSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></svg>`;
+
   /* ---- PAGE 1: header + summary + chart ---- */
   pages.push(`
     <div class="pdf-head">
-      <div class="ph-brand"><span class="ph-mark">${ic('layers')}</span> WorkLog</div>
+      <div class="ph-brand"><span class="ph-mark">${layersSvg}</span> WorkLog</div>
       <div class="ph-title">Workload Report</div>
       <div class="ph-meta">
         <div><span>Designer</span><b>${SETTINGS.userName}</b></div>
@@ -175,8 +178,61 @@ function openPdfPreview() {
   modal.querySelector('#pdfClose').addEventListener('click', closePdf);
   modal.querySelector('.pdf-overlay').addEventListener('click', closePdf);
   modal.querySelector('#pdfDownload').addEventListener('click', () => {
-    toast('PDF generated · ready for your lead', 'good');
+    exportPdf(docHtml, `WorkLog Report · ${fmtDate(reportRange.from)} – ${fmtDate(reportRange.to)}`);
   });
+}
+
+// Open a clean print window with the styled document and trigger the browser's
+// "Save as PDF". Keeps the exact mockup design (no app chrome).
+function exportPdf(docHtml, title) {
+  const cssBase = location.href; // resolves css/*.css relative to WorkLog.html
+  const href = (f) => new URL('css/' + f, cssBase).href;
+  const printCss = `
+    @page { size: A4; margin: 0; }
+    html, body { margin: 0; padding: 0; background: #fff; }
+    .pdf-doc { width: auto; gap: 0; transform: none !important; display: block; }
+    .pdf-page {
+      width: 210mm; min-height: 297mm; height: auto;
+      box-shadow: none; border-radius: 0; margin: 0;
+      page-break-after: always; break-after: page;
+    }
+    .pdf-page:last-child { page-break-after: auto; break-after: auto; }
+    .pdf-day, .pdf-callout, tr { page-break-inside: avoid; break-inside: avoid; }
+    @media screen {
+      body { background: #555; padding: 20px 0; }
+      .pdf-page { margin: 0 auto 18px; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
+      .print-hint { position: fixed; top: 0; left: 0; right: 0; background: #1c1b1f; color: #fff;
+        font: 600 13px/1.4 system-ui, sans-serif; padding: 11px 16px; display: flex; gap: 12px;
+        align-items: center; justify-content: center; z-index: 9; }
+      .print-hint button { background: #fff; color: #1c1b1f; border: 0; border-radius: 8px;
+        padding: 7px 14px; font: inherit; font-weight: 700; cursor: pointer; }
+      body { padding-top: 64px; }
+    }
+    @media print { .print-hint { display: none !important; } }
+  `;
+  const html = `<!doctype html><html data-theme="light"><head><meta charset="utf-8">
+    <title>${title}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="${href('worklog.css')}">
+    <link rel="stylesheet" href="${href('report.css')}">
+    <style>${printCss}</style></head>
+    <body>
+      <div class="print-hint">${title} <button onclick="window.print()">Save as PDF</button></div>
+      <div class="pdf-doc">${docHtml}</div>
+      <script>
+        window.addEventListener('load', function(){
+          // give the stylesheets a tick to apply, then open the print dialog
+          setTimeout(function(){ try { window.focus(); window.print(); } catch(e){} }, 350);
+        });
+      <\/script>
+    </body></html>`;
+
+  const w = window.open('', '_blank');
+  if (!w) { toast('Allow pop-ups to export the PDF', 'info'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  toast('Opening print dialog — choose “Save as PDF”', 'good');
 }
 function closePdf() {
   const m = document.getElementById('pdfModal');

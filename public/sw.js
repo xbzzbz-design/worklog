@@ -1,5 +1,5 @@
 /* WorkLog service worker — enables PWA install + offline, without serving stale HTML */
-const CACHE = 'worklog-v2';
+const CACHE = 'worklog-v3';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => {
