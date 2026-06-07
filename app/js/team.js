@@ -6,14 +6,26 @@ let teamScope = 'week'; // 'week' | 'today'
 let balanceEven = false;
 
 function renderTeam() {
-  const a = teamAnalysis(TEAM_DAILY);
+  const weekStart = startOfWeek(new Date(TODAY + 'T00:00:00'));
+  const weekDates = Array.from({ length: 5 }, (_, i) => isoDate(addDays(weekStart, i)));
+  const daily = Object.fromEntries(weekDates.map(d => [d, sum(ENTRIES.filter(e => e.date === d), e => e._c.final)]));
+  const weeklyEntries = ENTRIES.filter(e => weekDates.includes(e.date));
+  const memberWeek = {};
+  weeklyEntries.forEach(e => { memberWeek[e.userId] = (memberWeek[e.userId] || 0) + e._c.final; });
+  const split = {
+    newWork: sum(weeklyEntries.filter(e => !e.isRevision && e.jobType !== 'OTHER'), e => e._c.final),
+    revision: sum(weeklyEntries.filter(e => e.isRevision), e => e._c.final),
+    meeting: sum(weeklyEntries.filter(e => e.jobType === 'OTHER'), e => e._c.final),
+  };
+  const scopeCount = weeklyEntries.filter(isScope).length;
+  const a = teamAnalysis(daily);
   const utilPct = Math.round(a.util * 100);
   const over100 = a.util > 1.0;
   const utilTone = over100 ? 'over' : a.util >= 0.85 ? 'good' : a.util >= 0.6 ? 'mid' : 'warn';
 
   // members in stable (team) order — NOT ranked by output. Each measured against their OWN capacity.
   const members = TEAM.map(m => {
-    const units = TEAM_WEEK[m.id] || 0;
+    const units = memberWeek[m.id] || 0;
     const cap = memberCapacity(m.id, a.days);
     const pct = cap ? Math.round(units/cap*100) : 0;
     const onLeave = leaveDaysInList(m.id, a.days);
@@ -21,8 +33,8 @@ function renderTeam() {
   });
   const overloaded = members.filter(m=>m.pct>100).length;
 
-  const splitTotal = TEAM_SPLIT.newWork + TEAM_SPLIT.revision + TEAM_SPLIT.meeting;
-  const pct = (n)=> Math.round(n/splitTotal*100);
+  const splitTotal = split.newWork + split.revision + split.meeting;
+  const pct = (n)=> splitTotal ? Math.round(n/splitTotal*100) : 0;
 
   return `
   <div class="page team">
@@ -51,16 +63,16 @@ function renderTeam() {
     <div class="section-h"><h2>Where the hours went</h2></div>
     <div class="split-card">
       <div class="split-bar">
-        <span class="seg-new" style="width:${pct(TEAM_SPLIT.newWork)}%"></span>
-        <span class="seg-rev" style="width:${pct(TEAM_SPLIT.revision)}%"></span>
-        <span class="seg-meet" style="width:${pct(TEAM_SPLIT.meeting)}%"></span>
+        <span class="seg-new" style="width:${pct(split.newWork)}%"></span>
+        <span class="seg-rev" style="width:${pct(split.revision)}%"></span>
+        <span class="seg-meet" style="width:${pct(split.meeting)}%"></span>
       </div>
       <div class="split-legend">
-        <span><i class="sw seg-new"></i> New work <b class="tnum">${pct(TEAM_SPLIT.newWork)}%</b></span>
-        <span><i class="sw seg-rev"></i> Revisions <b class="tnum">${pct(TEAM_SPLIT.revision)}%</b></span>
-        <span><i class="sw seg-meet"></i> Meetings <b class="tnum">${pct(TEAM_SPLIT.meeting)}%</b></span>
+        <span><i class="sw seg-new"></i> New work <b class="tnum">${pct(split.newWork)}%</b></span>
+        <span><i class="sw seg-rev"></i> Revisions <b class="tnum">${pct(split.revision)}%</b></span>
+        <span><i class="sw seg-meet"></i> Meetings <b class="tnum">${pct(split.meeting)}%</b></span>
       </div>
-      <div class="split-note">${ic('rotate-ccw')} <b>${pct(TEAM_SPLIT.revision)}% went to revisions</b> and ${TEAM_SCOPE} were scope-creep — capacity spent on rework the team didn't create. That's a process cost, not a productivity gap.</div>
+      <div class="split-note">${ic('rotate-ccw')} <b>${pct(split.revision)}% went to revisions</b> and ${scopeCount} were scope-creep — capacity spent on rework the team didn't create. That's a process cost, not a productivity gap.</div>
     </div>
 
     <!-- HOW EVERYONE'S HOLDING UP (not a ranking) -->

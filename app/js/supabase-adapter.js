@@ -67,8 +67,31 @@
     updated_at: new Date().toISOString(),
   });
 
+  const fromDbHelp = (h) => ({
+    id: h.id,
+    byId: h.author_id,
+    clientId: h.client_id || null,
+    title: h.title || h.description,
+    need: h.description,
+    hours: h.hours_needed || 1,
+    urgency: h.urgency === 'high' ? 'today' : 'soon',
+    status: h.status,
+    helperId: h.handled_by,
+    thanks: h.thanks_message || '',
+    loggedHours: null,
+  });
+
   function replaceArray(target, rows) {
     target.splice(0, target.length, ...rows);
+  }
+
+  function clearPrototypeData() {
+    replaceArray(CLIENTS, []);
+    replaceArray(ENTRIES, []);
+    replaceArray(TEAM, []);
+    replaceArray(HOLIDAYS, []);
+    replaceArray(HELP_REQUESTS, []);
+    Object.keys(LEAVE).forEach(k => delete LEAVE[k]);
   }
 
   function initials(name) {
@@ -76,12 +99,13 @@
   }
 
   async function bootstrap() {
-    if (!sb) return;
+    clearPrototypeData();
+    if (!sb) throw new Error('Supabase client failed to load');
     const { data: auth } = await sb.auth.getUser();
     const user = auth && auth.user;
     if (!user) {
       window.parent && window.parent.postMessage({ type: 'WL_SIGNED_OUT' }, window.location.origin);
-      return;
+      return false;
     }
     window.WL_CURRENT_USER_ID = user.id;
 
@@ -128,19 +152,8 @@
     replaceArray(ENTRIES, (entriesRes.data || []).map(fromDbEntry));
     ENTRIES.forEach(e => { e._c = calcUnits(e); });
 
-    replaceArray(HELP_REQUESTS, (helpRes.data || []).map(h => ({
-      id: h.id,
-      byId: h.author_id,
-      clientId: null,
-      title: h.description,
-      need: h.description,
-      hours: h.hours_needed || 1,
-      urgency: h.urgency === 'high' ? 'today' : 'soon',
-      status: h.status,
-      helperId: h.handled_by,
-      thanks: h.thanks_message || '',
-      loggedHours: null,
-    })));
+    replaceArray(HELP_REQUESTS, (helpRes.data || []).map(fromDbHelp));
+    return true;
   }
 
   async function saveEntry(entry) {
@@ -156,10 +169,126 @@
     return saved;
   }
 
+  async function updateEntry(id, entry) {
+    const { data: auth } = await sb.auth.getUser();
+    const user = auth && auth.user;
+    if (!user) throw new Error('Not signed in');
+    const payload = toDbEntry(entry, user.id);
+    const { data, error } = await sb.from('entries').update(payload).eq('id', id).select('*').single();
+    if (error) throw error;
+    const saved = fromDbEntry(data);
+    saved._c = calcUnits(saved);
+    const idx = ENTRIES.findIndex(e => e.id === id);
+    if (idx >= 0) ENTRIES.splice(idx, 1, saved);
+    else ENTRIES.unshift(saved);
+    return saved;
+  }
+
   async function deleteEntry(id) {
     const { error } = await sb.from('entries').delete().eq('id', id);
     if (error) throw error;
   }
 
-  window.WLStore = { bootstrap, saveEntry, deleteEntry, supabase: sb };
+  async function createClient(name) {
+    const { data, error } = await sb.from('clients').insert({ name, archived: false }).select('*').single();
+    if (error) throw error;
+    const client = { id: data.id, name: data.name, archived: !!data.archived };
+    CLIENTS.push(client);
+    CLIENTS.sort((a, b) => a.name.localeCompare(b.name));
+    return client;
+  }
+
+  async function setClientArchived(id, archived) {
+    const { error } = await sb.from('clients').update({ archived }).eq('id', id);
+    if (error) throw error;
+    const client = CLIENTS.find(c => c.id === id);
+    if (client) client.archived = archived;
+    return client;
+  }
+
+  async function createHelpRequest(payload) {
+    const { data: auth } = await sb.auth.getUser();
+    const user = auth && auth.user;
+    if (!user) throw new Error('Not signed in');
+    const { data, error } = await sb.from('help_requests').insert({
+      author_id: user.id,
+      client_id: payload.clientId || null,
+      title: payload.title,
+      description: payload.need || payload.title,
+      urgency: payload.urgency === 'today' ? 'high' : 'medium',
+      hours_needed: payload.hours || null,
+      status: 'open',
+    }).select('*').single();
+    if (error) throw error;
+    const req = fromDbHelp(data);
+    HELP_REQUESTS.unshift(req);
+    return req;
+  }
+
+  async function claimHelpRequest(id) {
+    const { data: auth } = await sb.auth.getUser();
+    const user = auth && auth.user;
+    if (!user) throw new Error('Not signed in');
+    const { data, error } = await sb.from('help_requests').update({
+      status: 'claimed',
+      handled_by: user.id,
+    }).eq('id', id).select('*').single();
+    if (error) throw error;
+    const req = fromDbHelp(data);
+    const idx = HELP_REQUESTS.findIndex(h => h.id === id);
+    if (idx >= 0) HELP_REQUESTS.splice(idx, 1, req);
+    return req;
+  }
+
+  async function resolveHelpRequest(id, thanks) {
+    const { data, error } = await sb.from('help_requests').update({
+      status: 'resolved',
+      thanks_message: thanks || 'Thank you.',
+      resolved_at: new Date().toISOString(),
+    }).eq('id', id).select('*').single();
+    if (error) throw error;
+    const req = fromDbHelp(data);
+    const idx = HELP_REQUESTS.findIndex(h => h.id === id);
+    if (idx >= 0) HELP_REQUESTS.splice(idx, 1, req);
+    return req;
+  }
+
+  async function deleteHelpRequest(id) {
+    const { error } = await sb.from('help_requests').delete().eq('id', id);
+    if (error) throw error;
+    const idx = HELP_REQUESTS.findIndex(h => h.id === id);
+    if (idx >= 0) HELP_REQUESTS.splice(idx, 1);
+  }
+
+  async function updateProfile(payload) {
+    const { data: auth } = await sb.auth.getUser();
+    const user = auth && auth.user;
+    if (!user) throw new Error('Not signed in');
+    const { error } = await sb.from('users').update({
+      name: payload.name,
+      daily_max: payload.dailyMax,
+    }).eq('id', user.id);
+    if (error) throw error;
+  }
+
+  async function updateTeamSettings() {
+    const { error } = await sb.from('team_settings').update({
+      workdays: TEAM_SETTINGS.workdays.slice().sort(),
+      holiday_addon: TEAM_SETTINGS.holidayAddOn,
+      updated_at: new Date().toISOString(),
+    }).eq('id', 1);
+    if (error) throw error;
+  }
+
+  async function deleteHoliday(date) {
+    const { error } = await sb.from('holidays').delete().eq('date', date);
+    if (error) throw error;
+  }
+
+  window.WLStore = {
+    bootstrap, saveEntry, updateEntry, deleteEntry, createClient, setClientArchived,
+    createHelpRequest, claimHelpRequest, resolveHelpRequest, deleteHelpRequest,
+    updateProfile, updateTeamSettings, deleteHoliday,
+    supabase: sb
+  };
 })();

@@ -3,8 +3,12 @@
    ============================================================ */
 
 function renderStats() {
-  const thisM = monthEntries('2026-06');
-  const lastM = monthEntries('2026-05');
+  const todayDate = new Date(TODAY + 'T00:00:00');
+  const thisYm = TODAY.slice(0, 7);
+  const lastYm = new Date(todayDate.getFullYear(), todayDate.getMonth() - 1, 1).toISOString().slice(0, 7);
+  const lastMonthName = new Date(todayDate.getFullYear(), todayDate.getMonth() - 1, 1).toLocaleDateString('en-US', { month:'short' });
+  const thisM = monthEntries(thisYm);
+  const lastM = monthEntries(lastYm);
   const thisTotal = sum(thisM, e=>e._c.final);
   const lastTotal = sum(lastM, e=>e._c.final);
 
@@ -53,7 +57,7 @@ function renderStats() {
     <div class="stats-hero">
       <div class="sh-main">
         <div class="sh-num tnum">${u(thisTotal)}</div>
-        <div class="sh-lab">units this month${lastTotal?` · ${thisTotal>=lastTotal?'+':''}${Math.round((thisTotal-lastTotal)/lastTotal*100)}% vs May`:''}</div>
+        <div class="sh-lab">units this month${lastTotal?` · ${thisTotal>=lastTotal?'+':''}${Math.round((thisTotal-lastTotal)/lastTotal*100)}% vs ${lastMonthName}`:''}</div>
       </div>
       <div class="sh-grid">
         <div class="sh-cell"><b class="tnum">${piecesShipped}</b><small>pieces shipped</small></div>

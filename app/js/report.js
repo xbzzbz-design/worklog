@@ -2,7 +2,28 @@
    WorkLog — Report + PDF preview
    ============================================================ */
 
-let reportRange = { from: '2026-06-01', to: '2026-06-30', label: 'This month' };
+function isoDate(d) { return d.toISOString().slice(0,10); }
+function startOfWeek(d) {
+  const x = new Date(d);
+  const day = x.getDay() || 7;
+  x.setDate(x.getDate() - day + 1);
+  return x;
+}
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function monthBounds(offset) {
+  const base = new Date(TODAY + 'T00:00:00');
+  const start = new Date(base.getFullYear(), base.getMonth() + offset, 1);
+  const end = new Date(base.getFullYear(), base.getMonth() + offset + 1, 0);
+  return [isoDate(start), isoDate(end)];
+}
+function weekBounds(offset) {
+  const start = startOfWeek(new Date(TODAY + 'T00:00:00'));
+  const shifted = addDays(start, offset * 7);
+  return [isoDate(shifted), isoDate(addDays(shifted, 6))];
+}
+
+const [defaultFrom, defaultTo] = monthBounds(0);
+let reportRange = { from: defaultFrom, to: defaultTo, label: 'This month' };
 
 function rangeStats(from, to) {
   const es = rangeEntries(from, to);
@@ -39,12 +60,11 @@ function renderReport() {
   const peak = Math.max(max, ...s.dayList.map(d=>d[1]), 1);
 
   // previous equivalent period (for comparison)
-  const isoD = (d) => d.toISOString().slice(0,10);
   const dFrom = new Date(reportRange.from), dTo = new Date(reportRange.to);
   const lenDays = Math.round((dTo - dFrom)/86400000) + 1;
   const pTo = new Date(dFrom); pTo.setDate(pTo.getDate()-1);
   const pFrom = new Date(pTo); pFrom.setDate(pFrom.getDate()-(lenDays-1));
-  const prev = rangeStats(isoD(pFrom), isoD(pTo));
+  const prev = rangeStats(isoDate(pFrom), isoDate(pTo));
   const dPct = (cur, prv) => prv ? Math.round((cur-prv)/prv*100) : (cur>0?100:0);
   const deltaTag = (cur, prv, goodUp=true) => {
     const p = dPct(cur, prv);
@@ -54,11 +74,15 @@ function renderReport() {
     return `<div class="delta ${good?'up':'down'}">${ic(up?'arrow-up-right':'arrow-down-right')} ${Math.abs(p)}%</div>`;
   };
 
+  const thisWeek = weekBounds(0);
+  const lastWeek = weekBounds(-1);
+  const thisMonth = monthBounds(0);
+  const lastMonth = monthBounds(-1);
   const presets = [
-    ['This week','2026-06-01','2026-06-07'],
-    ['Last week','2026-05-25','2026-05-31'],
-    ['This month','2026-06-01','2026-06-30'],
-    ['Last month','2026-05-01','2026-05-31'],
+    ['This week', thisWeek[0], thisWeek[1]],
+    ['Last week', lastWeek[0], lastWeek[1]],
+    ['This month', thisMonth[0], thisMonth[1]],
+    ['Last month', lastMonth[0], lastMonth[1]],
     ['Custom','',''],
   ];
 
@@ -78,7 +102,7 @@ function renderReport() {
       <div class="cr-field"><label>To</label><input type="date" id="crTo" value="${reportRange.to}"></div>
       <button class="btn soft" id="crApply">${ic('check')} Apply</button>
     </div>
-    <div class="range-display">${ic('calendar')} ${fmtDate(reportRange.from)} → ${fmtDate(reportRange.to)} <span class="cmp-note">vs ${fmtDate(isoD(pFrom))} – ${fmtDate(isoD(pTo))}</span></div>
+    <div class="range-display">${ic('calendar')} ${fmtDate(reportRange.from)} → ${fmtDate(reportRange.to)} <span class="cmp-note">vs ${fmtDate(isoDate(pFrom))} – ${fmtDate(isoDate(pTo))}</span></div>
 
     <!-- summary cards -->
     <div class="rep-stats">

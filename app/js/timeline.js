@@ -2,7 +2,7 @@
    WorkLog — Timeline (calendar + list + filters)
    ============================================================ */
 
-let tl = { view: 'calendar', month: '2026-06', clients: new Set(), types: new Set(), flagged: false, starred: false, showFilters: false };
+let tl = { view: 'calendar', month: TODAY.slice(0, 7), clients: new Set(), types: new Set(), flagged: false, starred: false, showFilters: false };
 
 function tlFiltered() {
   return ENTRIES.filter(e => {

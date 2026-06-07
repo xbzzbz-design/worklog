@@ -9,17 +9,21 @@ function renderHome() {
   const over = todayTotal > max;
 
   // month stats
-  const thisM = monthEntries('2026-06');
-  const lastM = monthEntries('2026-05');
+  const todayDate = new Date(TODAY + 'T00:00:00');
+  const thisYm = TODAY.slice(0, 7);
+  const lastYm = new Date(todayDate.getFullYear(), todayDate.getMonth() - 1, 1).toISOString().slice(0, 7);
+  const lastMonthName = new Date(todayDate.getFullYear(), todayDate.getMonth() - 1, 1).toLocaleDateString('en-US', { month: 'short' });
+  const thisM = monthEntries(thisYm);
+  const lastM = monthEntries(lastYm);
   const thisTotal = sum(thisM, e=>e._c.final);
   const lastTotal = sum(lastM, e=>e._c.final);
   const delta = lastTotal ? ((thisTotal - lastTotal) / lastTotal * 100) : 0;
   // supportive framing — never punish a lighter month
   const monthFrame = delta > 8
-    ? { word: `A fuller month than May`, ic: 'trending-up', tone: 'calm' }
+    ? { word: `A fuller month than ${lastMonthName}`, ic: 'trending-up', tone: 'calm' }
     : delta < -8
-    ? { word: `Lighter than May — enjoy the breathing room`, ic: 'wind', tone: 'calm' }
-    : { word: `Right on pace with May`, ic: 'equal', tone: 'calm' };
+    ? { word: `Lighter than ${lastMonthName} — enjoy the breathing room`, ic: 'wind', tone: 'calm' }
+    : { word: `Right on pace with ${lastMonthName}`, ic: 'equal', tone: 'calm' };
 
   // pieces shipped this month (feel-good volume metric) — exclude time-based meetings
   const piecesShipped = sum(thisM.filter(e=>!(JOB_TYPES[e.jobType]&&JOB_TYPES[e.jobType].timeBased)), e => e.quantity);

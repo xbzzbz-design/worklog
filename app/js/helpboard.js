@@ -77,18 +77,32 @@ function helpCard(h) {
 }
 
 function wireHelpBoard(root) {
-  root.querySelectorAll('[data-claim]').forEach(b=>b.addEventListener('click',()=>{
+  root.querySelectorAll('[data-claim]').forEach(b=>b.addEventListener('click', async ()=>{
     const h = HELP_REQUESTS.find(x=>x.id===b.dataset.claim);
-    if (h) { h.status='claimed'; h.helperId='u1'; }
-    markSyncing();
-    rerenderScreen('helpboard');
-    toast('Thank you — they’ll feel that', 'good');
+    if (!h) return;
+    try {
+      if (window.WLStore && window.WLStore.claimHelpRequest) await window.WLStore.claimHelpRequest(h.id);
+      else { h.status='claimed'; h.helperId=window.WL_CURRENT_USER_ID; }
+      markSyncing();
+      rerenderScreen('helpboard');
+      toast('Thank you — they’ll feel that', 'good');
+    } catch (err) {
+      console.error(err);
+      toast('Could not claim this request. Try again.', 'info');
+    }
   }));
-  root.querySelectorAll('[data-cancel]').forEach(b=>b.addEventListener('click',()=>{
+  root.querySelectorAll('[data-cancel]').forEach(b=>b.addEventListener('click', async ()=>{
     const i = HELP_REQUESTS.findIndex(x=>x.id===b.dataset.cancel);
-    if (i>=0) HELP_REQUESTS.splice(i,1);
-    rerenderScreen('helpboard');
-    toast('Request removed', 'info');
+    if (i<0) return;
+    try {
+      if (window.WLStore && window.WLStore.deleteHelpRequest) await window.WLStore.deleteHelpRequest(HELP_REQUESTS[i].id);
+      else HELP_REQUESTS.splice(i,1);
+      rerenderScreen('helpboard');
+      toast('Request removed', 'info');
+    } catch (err) {
+      console.error(err);
+      toast('Could not remove request. Try again.', 'info');
+    }
   }));
   root.querySelectorAll('[data-logtime]').forEach(b=>b.addEventListener('click',()=>{
     const h = HELP_REQUESTS.find(x=>x.id===b.dataset.logtime);
@@ -130,13 +144,19 @@ function openResolve(id) {
   el.classList.add('open');
   refreshIcons();
   el.querySelector('.dm-overlay').addEventListener('click', closeDetail);
-  el.querySelector('#thxSend').addEventListener('click', ()=>{
-    h.status='resolved';
-    h.thanks = el.querySelector('#thxText').value.trim() || 'Thank you.';
-    markSyncing();
-    closeDetail();
-    rerenderScreen('helpboard');
-    toast('Thanks sent — handled together 💛', 'good');
+  el.querySelector('#thxSend').addEventListener('click', async ()=>{
+    const thanks = el.querySelector('#thxText').value.trim() || 'Thank you.';
+    try {
+      if (window.WLStore && window.WLStore.resolveHelpRequest) await window.WLStore.resolveHelpRequest(h.id, thanks);
+      else { h.status='resolved'; h.thanks = thanks; }
+      markSyncing();
+      closeDetail();
+      rerenderScreen('helpboard');
+      toast('Thanks sent — handled together', 'good');
+    } catch (err) {
+      console.error(err);
+      toast('Could not resolve request. Try again.', 'info');
+    }
   });
 }
 
@@ -167,18 +187,27 @@ function openAskHelp() {
   el.classList.add('open');
   refreshIcons();
   el.querySelector('.dm-overlay').addEventListener('click', closeDetail);
-  el.querySelector('#askPost').addEventListener('click', ()=>{
+  el.querySelector('#askPost').addEventListener('click', async ()=>{
     const title = el.querySelector('#askTitle').value.trim();
     if (!title) { toast('Add a short title', 'info'); el.querySelector('#askTitle').focus(); return; }
-    HELP_REQUESTS.unshift(H({
-      byId:'u1', clientId: el.querySelector('#askClient').value,
-      title, need: el.querySelector('#askNeed').value.trim() || 'Could use a hand on this',
+    const payload = {
+      byId: window.WL_CURRENT_USER_ID,
+      clientId: el.querySelector('#askClient').value || null,
+      title,
+      need: el.querySelector('#askNeed').value.trim() || 'Could use a hand on this',
       hours: parseFloat(el.querySelector('#askHours').value)||1,
       urgency: el.querySelector('#askUrg').value,
-    }));
-    markSyncing();
-    closeDetail();
-    rerenderScreen('helpboard');
-    toast('Posted — your team can see it now', 'good');
+    };
+    try {
+      if (window.WLStore && window.WLStore.createHelpRequest) await window.WLStore.createHelpRequest(payload);
+      else HELP_REQUESTS.unshift(H(payload));
+      markSyncing();
+      closeDetail();
+      rerenderScreen('helpboard');
+      toast('Posted — your team can see it now', 'good');
+    } catch (err) {
+      console.error(err);
+      toast('Could not post request. Try again.', 'info');
+    }
   });
 }
