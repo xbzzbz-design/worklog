@@ -1,0 +1,17 @@
+{
+  "name": "WorkLog — Fair Workload Tracking",
+  "short_name": "WorkLog",
+  "description": "Log daily design work with fair workload credit, track revisions, flag scope creep, and export professional reports.",
+  "start_url": "./WorkLog.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f5f0",
+  "theme_color": "#4b3fb0",
+  "categories": ["productivity", "business"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

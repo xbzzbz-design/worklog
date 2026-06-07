@@ -1,0 +1,47 @@
+/* ============================================================
+   WorkLog — micro-animations
+   ============================================================ */
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* tactile press */
+.pressed { transform: scale(0.96) !important; transition: transform .08s ease !important; }
+.entry.pressed, .cli-row.pressed { transform: scale(0.985) !important; }
+
+/* pop (star / flag toggle) */
+.pop { animation: popk .4s cubic-bezier(.2,.9,.3,1.4); }
+@keyframes popk { 0%{transform:scale(1)} 35%{transform:scale(1.12)} 100%{transform:scale(1)} }
+
+/* burst particles */
+.particle {
+  position: absolute; font-size: 14px; pointer-events: none; z-index: 5;
+  transform: translate(-50%,-50%); animation: burst .7s ease-out forwards;
+}
+@keyframes burst {
+  0% { opacity: 1; transform: translate(-50%,-50%) scale(0.4); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.1) rotate(40deg); }
+}
+
+/* newly added entry highlight */
+.entry.just-added { animation: justadded 1.6s ease; }
+@keyframes justadded {
+  0% { box-shadow: 0 0 0 2px var(--primary), var(--sh-2); transform: translateY(-3px); }
+  30% { box-shadow: 0 0 0 2px var(--primary-soft), var(--sh-2); }
+  100% { box-shadow: var(--sh-1); transform: none; }
+}
+
+/* confetti fall */
+@keyframes cffall {
+  0% { transform: translateY(0) rotate(0); opacity: 1; }
+  100% { transform: translateY(880px) rotate(540deg); opacity: 1; }
+}
+
+/* celebrate card */
+@keyframes cbpop { 0%{transform:translate(-50%,-44%) scale(.9)} 100%{transform:translate(-50%,-50%) scale(1)} }
+@keyframes cbic { 0%{transform:scale(.6) rotate(-12deg)} 60%{transform:scale(1.12) rotate(6deg)} 100%{transform:scale(1) rotate(0)} }
+
+/* gentle reduced-motion guard */
+@media (prefers-reduced-motion: reduce) {
+  .particle, .cf { display: none !important; }
+  .pop, .just-added, .cb-card, .cb-ic { animation: none !important; }
+}
