@@ -140,3 +140,24 @@ async function uploadSnap(blob) {
   const { data } = await sb.storage.from('snaps').createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
   return data.signedUrl;
 }
+
+/* ---- safe async action runner ----
+   Every button that writes to the DB goes through this. It:
+   • blocks re-entry while the action is in flight (kills rapid double-taps)
+   • disables + shows a loading state on the trigger
+   • surfaces any error as a toast
+   Pair it with optimistic UI (update memory + close the sheet first) so it
+   never feels like a hang. Throw from fn after rolling back to show the error. */
+async function runAction(trigger, fn, errMsg) {
+  if (trigger && trigger._busy) return;
+  if (trigger) { trigger._busy = true; trigger.disabled = true; trigger.classList && trigger.classList.add('loading'); }
+  try {
+    await fn();
+  } catch (err) {
+    console.error(err);
+    const detail = window.WLStoreErrorText ? window.WLStoreErrorText(err) : '';
+    toast((errMsg || 'Something went wrong') + (detail ? `: ${detail}` : ''), 'info');
+  } finally {
+    if (trigger) { trigger._busy = false; trigger.disabled = false; trigger.classList && trigger.classList.remove('loading'); }
+  }
+}
