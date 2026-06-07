@@ -283,13 +283,10 @@ export default function Entry() {
       const ext = 'jpg'
       const path = `${user.id}/${Date.now()}.${ext}`
       const { data: upload } = await supabase.storage
-        .from('entry-snaps')
+        .from('snaps')
         .upload(path, compressed, { contentType: 'image/jpeg', upsert: false })
       if (upload) imagePath = upload.path
     }
-
-    const units = overrideVal !== '' && !isNaN(Number(overrideVal))
-      ? Number(overrideVal) : result.total
 
     const payload = {
       user_id: user.id,
@@ -306,7 +303,7 @@ export default function Entry() {
       condition_brief_incomplete: condBrief,
       condition_asset_not_provided: condAsset,
       condition_deadline_rush: condRush,
-      calculated_units: units,
+      calculated_units: result.total,
       manual_override: overrideVal !== '' && !isNaN(Number(overrideVal)) ? Number(overrideVal) : null,
       manual_override_reason: overrideReason || null,
       note: note || null,
