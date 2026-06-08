@@ -362,6 +362,56 @@ function memberCapacity(uid, days) {
   return m.dailyMax * (days.length - leaveDaysInList(uid, days));
 }
 
+/* ---- team "pulse" ----
+   Per-day participation model: a person-day only counts (load AND capacity)
+   if that person actually logged that day. Non-logged days vanish from the
+   maths entirely — no phantom zeros, no one looks idle, no witch-hunt — so
+   the utilisation ratio stays meaningful even when not everyone logs. */
+function teamPulse(days) {
+  const loadByDay = {}, capByDay = {}, utilByDay = {};
+  days.forEach(d => {
+    const es = ENTRIES.filter(e => e.date === d);
+    const loggers = new Set(es.map(e => e.userId));
+    let cap = 0;
+    loggers.forEach(uid => { const m = teamMember(uid); if (m && !leaveOn(uid, d)) cap += m.dailyMax; });
+    loadByDay[d] = sum(es, e => e._c.final);
+    capByDay[d] = cap;
+    utilByDay[d] = cap ? loadByDay[d] / cap : 0;        // 0 also means "no data" that day
+    utilByDay[d + '_has'] = loggers.size > 0;
+  });
+  const total = sum(days, d => loadByDay[d]);
+  const capacity = sum(days, d => capByDay[d]);
+  const util = capacity ? total / capacity : 0;
+  const overtime = sum(days, d => Math.max(0, loadByDay[d] - capByDay[d]));
+  const idle = sum(days, d => Math.max(0, capByDay[d] - loadByDay[d]));
+  const crunchDays = days.filter(d => loadByDay[d] > capByDay[d] + 0.01).length;
+  // worst single day drives the team light — so a heavy Monday shows red on
+  // Monday, instead of waiting for the weekly average to catch up days later
+  const maxUtil = Math.max(0, ...days.filter(d => utilByDay[d + '_has']).map(d => utilByDay[d]));
+
+  // per-member status — measured over the days THEY logged, against THEIR capacity
+  const members = TEAM.map(m => {
+    const myDays = days.filter(d => ENTRIES.some(e => e.userId === m.id && e.date === d));
+    const load = sum(myDays, d => sum(ENTRIES.filter(e => e.userId === m.id && e.date === d), e => e._c.final));
+    let cap = 0; myDays.forEach(d => { if (!leaveOn(m.id, d)) cap += m.dailyMax; });
+    return { ...m, logged: myDays.length > 0, util: cap ? load / cap : 0, onLeave: leaveDaysInList(m.id, days) };
+  });
+  const loggedMembers = members.filter(m => m.logged);
+  const capPerDay = days.length ? capacity / days.length : 0;
+  return {
+    days, loadByDay, capByDay, utilByDay, total, capacity, util, overtime, idle, crunchDays, maxUtil,
+    members, loggedMembers, capPerDay, evenPerDay: days.length ? total / days.length : 0,
+    coverage: { logged: loggedMembers.length, total: TEAM.length, missing: TEAM.length - loggedMembers.length },
+  };
+}
+
+// map a utilisation ratio to a load state — colour + agency-humour label + plain subtitle
+function loadStatus(util) {
+  if (util > 1.0)   return { key: 'red',    tone: 'over', label: 'Heavy week',  sub: 'over a sustainable load' };
+  if (util >= 0.85) return { key: 'yellow', tone: 'warn', label: 'Send snacks', sub: 'filling up' };
+  return { key: 'green', tone: 'good', label: 'Healthy', sub: 'within a healthy load' };
+}
+
 /* ============================================================
    HELP BOARD  (raise a hand · lend a hand)
    ============================================================ */

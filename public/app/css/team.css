@@ -215,3 +215,54 @@ body[data-theme="dark"] .bal-msg.flip { background: var(--paper-2); border-color
 .ds-lv.on.sick { background: var(--bad-soft); color: var(--bad-ink); border-color: oklch(0.85 0.06 33); }
 .ds-lv.on.vacation { background: var(--primary-tint); color: var(--primary-700); border-color: var(--primary-soft); }
 .ds-lv.clear { flex: 0 0 auto; color: var(--muted); }
+
+/* ============================================================
+   Team pulse — daily-computed load state (colour, not a number)
+   ============================================================ */
+.pulse-card { border-radius: var(--r-lg); box-shadow: var(--sh-1); padding: 18px 20px; border: 1px solid var(--line); background: var(--card); position: relative; overflow: hidden; }
+.pulse-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; }
+.pulse-green::before { background: var(--good); }
+.pulse-yellow::before { background: var(--warn); }
+.pulse-red::before { background: var(--bad); }
+.pulse-none::before { background: var(--line); }
+.pulse-green { background: linear-gradient(180deg, var(--good-soft), var(--card) 70%); }
+.pulse-yellow { background: linear-gradient(180deg, var(--warn-soft), var(--card) 70%); }
+.pulse-red { background: linear-gradient(180deg, var(--bad-soft), var(--card) 70%); }
+
+.pulse-head { display: flex; align-items: center; gap: 12px; }
+.pulse-orb { width: 16px; height: 16px; border-radius: 50%; flex: none; box-shadow: 0 0 0 4px currentColor; opacity: 1; }
+.pulse-green .pulse-orb { background: var(--good); color: oklch(0.62 0.115 152 / 0.18); }
+.pulse-yellow .pulse-orb { background: var(--warn); color: oklch(0.74 0.12 72 / 0.2); }
+.pulse-red .pulse-orb { background: var(--bad); color: oklch(0.585 0.155 28 / 0.18); }
+.pulse-none .pulse-orb { background: var(--faint); color: var(--line); }
+.pulse-lab { flex: 1; }
+.pulse-lab b { font-family: var(--serif); font-size: 22px; font-weight: 700; display: block; line-height: 1.1; }
+.pulse-lab small { font-size: 12.5px; color: var(--muted); }
+.pulse-cov { text-align: right; font-size: 18px; font-weight: 800; color: var(--ink-2); line-height: 1.1; }
+.pulse-cov small { display: block; font-size: 10px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: .03em; }
+
+.pulse-days { display: flex; gap: 8px; margin: 16px 0 4px; }
+.pulse-day { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.pulse-pip { width: 100%; height: 8px; border-radius: 99px; }
+.pip-green { background: var(--good); }
+.pip-yellow { background: var(--warn); }
+.pip-red { background: var(--bad); }
+.pip-none { background: var(--line-2); }
+.pip-today { box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--ink-2); }
+.pulse-dow { font-size: 10px; font-weight: 700; color: var(--faint); }
+
+.pulse-note { margin-top: 12px; font-size: 12px; line-height: 1.45; color: var(--muted); display: flex; gap: 7px; }
+.pulse-note svg { width: 14px; height: 14px; flex: none; margin-top: 1px; }
+.pulse-foot { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.5; color: var(--ink-2); display: flex; gap: 8px; }
+.pulse-foot svg { width: 15px; height: 15px; flex: none; margin-top: 1px; color: var(--good); }
+
+/* per-person status chip (no numbers) */
+.mem-body { flex: 1; min-width: 0; }
+.mem-status { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12.5px; font-weight: 700; }
+.mem-status .st-pip { width: 9px; height: 9px; border-radius: 50%; }
+.st-green { color: var(--good-ink); }
+.st-green .st-pip { background: var(--good); }
+.st-yellow { color: var(--warn-ink); }
+.st-yellow .st-pip { background: var(--warn); }
+.st-red { color: var(--bad-ink); }
+.st-red .st-pip { background: var(--bad); }
