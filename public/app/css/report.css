@@ -153,5 +153,16 @@
 .pdf-callout { margin-top: 16px; padding: 12px 14px; background: oklch(0.96 0.03 33); border-left: 3px solid var(--bad); border-radius: 6px; font-size: 11.5px; color: var(--bad-ink); }
 .evid-thumb { display: inline-grid; place-items: center; width: 22px; height: 22px; background: #f3f0ea; border-radius: 4px; vertical-align: middle; margin-right: 5px; color: #aaa39a; }
 .evid-link { color: var(--primary); text-decoration: underline; }
+/* appendix evidence as a thumbnail grid (no overflowing URLs) */
+.evid-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.evid-card { border: 1px solid #ece8e1; border-radius: 8px; overflow: hidden; page-break-inside: avoid; break-inside: avoid; }
+.evid-shot { aspect-ratio: 1 / 1; background: #f3f0ea; display: grid; place-items: center; overflow: hidden; }
+.evid-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.evid-ph { font-size: 26px; color: #c9c2b8; }
+.evid-meta { padding: 8px 9px; }
+.evid-meta b { font-size: 11px; font-weight: 800; display: block; color: oklch(0.32 0.012 60); word-break: break-word; }
+.evid-meta span { font-size: 9px; color: #9a9389; display: block; margin-top: 2px; word-break: break-word; }
+.evid-drive { color: var(--primary) !important; font-weight: 700; }
+.evid-empty { text-align: center; color: #aaa39a; padding: 24px; font-style: italic; font-size: 11px; }
 .pdf-footnote { font-size: 9.5px; color: #9a9389; line-height: 1.5; margin-top: 16px; font-style: italic; }
 .pdf-log .empty { text-align: center; color: #aaa39a; padding: 20px; font-style: italic; }

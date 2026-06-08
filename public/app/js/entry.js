@@ -218,7 +218,7 @@ function renderEntry() {
       <div class="fstep-h"><span class="num">9</span><label>Evidence</label><span class="opt-tag">add later anytime</span></div>
       <div class="evidence">
         <button class="ev-btn mobile-only" id="snapBtn">${ic('camera')} Quick snap</button>
-        <button class="ev-btn desktop-only" id="uploadBtn">${ic('upload')} Upload file</button>
+        <button class="ev-btn desktop-only" id="uploadBtn">${ic('upload')} Upload or drop an image</button>
         <div class="drive-row">${ic('link')}<input id="driveField" placeholder="Paste Google Drive link…" value="${draft.driveLink||''}"></div>
         <div class="snap-preview" id="snapPreview" hidden></div>
         <div class="honesty-note" id="honestyNote" hidden>${ic('shield-check')}<span><b>No file? That's fine for meetings and advisory time.</b> Log it honestly anyway — an honest record is the one weapon a bad manager can't argue with.</span></div>

@@ -183,6 +183,21 @@ function wireEntry(root) {
   // assign (not addEventListener) so re-rendering the form never stacks duplicate uploads
   snapInput.onchange = e => { handleImageFile(e.target.files[0]); e.target.value = ''; };
   uploadInput.onchange = e => { handleImageFile(e.target.files[0]); e.target.value = ''; };
+
+  // drag & drop an image anywhere on the evidence area (desktop)
+  const evZone = root.querySelector('.evidence');
+  if (evZone) {
+    ['dragenter','dragover'].forEach(ev => evZone.addEventListener(ev, (e) => { e.preventDefault(); evZone.classList.add('drag'); }));
+    ['dragleave','dragend'].forEach(ev => evZone.addEventListener(ev, (e) => { e.preventDefault(); if (e.target === evZone) evZone.classList.remove('drag'); }));
+    evZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      evZone.classList.remove('drag');
+      const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (!file) return;
+      if (file.type && file.type.startsWith('image/')) handleImageFile(file);
+      else toast('Please drop an image file', 'info');
+    });
+  }
   $('#driveField').addEventListener('input', (e)=>{ draft.driveLink = e.target.value; saveDraft(); });
 
   /* --- STEP 10 flag / star --- */
