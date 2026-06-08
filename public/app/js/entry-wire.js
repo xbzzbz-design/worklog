@@ -151,27 +151,29 @@ function wireEntry(root) {
     document.body.appendChild(fil);
   }
 
-  const handleImageFile = async (file) => {
+  // Pick a file → square-crop it → compress → upload. The cropper returns a
+  // square blob; we then show a thumbnail with a working remove button.
+  const handleImageFile = (file) => {
     if (!file) return;
-    const preview = $('#snapPreview');
-    const previewUrl = URL.createObjectURL(file);
-    preview.hidden = false;
-    preview.innerHTML = `<div class="snap-card"><div class="snap-thumb"><img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div><div><b>Compressing…</b><small>${file.name}</small></div></div>`;
-    try {
-      const blob = await compressSnap(file, 600, 50);
-      const kb = Math.round(blob.size / 1024);
-      const path = await uploadSnap(blob);
-      draft.snap = path;
-      saveDraft();
-      preview.innerHTML = `<div class="snap-card"><div class="snap-thumb"><img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div><div><b>Uploaded · ${kb} KB</b><small>${file.name}</small></div><button class="snap-x" id="snapX">${ic('x')}</button></div>`;
-      refreshIcons();
-      preview.querySelector('#snapX').addEventListener('click', () => { draft.snap = null; preview.hidden = true; saveDraft(); });
-      toast(`Saved · ${kb} KB`, 'good');
-    } catch (err) {
-      console.error(err);
-      preview.hidden = true;
-      toast('Could not upload image. Try again.', 'info');
-    }
+    openCropper(file, async (squareBlob, previewUrl) => {
+      const preview = $('#snapPreview');
+      if (!preview) return;
+      preview.hidden = false;
+      preview.innerHTML = `<div class="snap-card"><div class="snap-thumb"><img src="${previewUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div><div><b>Uploading…</b><small>compressing</small></div></div>`;
+      try {
+        const blob = await compressBlob(squareBlob, 50);
+        const kb = Math.round(blob.size / 1024);
+        const path = await uploadSnap(blob);
+        draft.snap = path;
+        saveDraft();
+        renderSnapPreview(previewUrl, `Attached · ${kb} KB`);
+        toast(`Saved · ${kb} KB`, 'good');
+      } catch (err) {
+        console.error(err);
+        clearSnapPreview();
+        toast('Could not upload image. Try again.', 'info');
+      }
+    });
   };
 
   const snapInput = document.getElementById('_snapInput');
@@ -246,7 +248,11 @@ function wireEntry(root) {
   });
 
   // restore snapshot preview + cause note + thread picker for a resumed draft
-  if (draft.snap) showSnapPreview($, draft.snap, 'image', 'Attached evidence', draft.snap);
+  if (draft.snap) {
+    const isUrl = draft.snap.startsWith('http') || draft.snap.startsWith('/');
+    if (isUrl) renderSnapPreview(draft.snap, 'Attached evidence');
+    else showSnapPreview($, draft.snap, 'image', 'Attached evidence', draft.snap);
+  }
   syncCauseNote();
   syncThreadPicker();
   syncConditions(root);
@@ -276,7 +282,129 @@ function showSnapPreview($, val, icon, title, sub) {
   p.hidden = false;
   p.innerHTML = `<div class="snap-card"><div class="snap-thumb">${ic(icon)}</div><div><b>${title}</b><small>${sub}</small></div><button class="snap-x" id="snapX">${ic('x')}</button></div>`;
   refreshIcons();
-  p.querySelector('#snapX').addEventListener('click', ()=>{ draft.snap=null; p.hidden=true; saveDraft(); });
+  p.querySelector('#snapX').addEventListener('click', ()=>{ clearSnapPreview(); });
+}
+
+/* ---- snap preview (image thumbnail) + robust remove ---- */
+function clearSnapPreview() {
+  const p = document.getElementById('snapPreview');
+  if (p) { p.hidden = true; p.innerHTML = ''; }
+  draft.snap = null;
+  saveDraft();
+}
+function renderSnapPreview(url, label) {
+  const p = document.getElementById('snapPreview');
+  if (!p) return;
+  p.hidden = false;
+  p.innerHTML = `<div class="snap-card">
+    <div class="snap-thumb"><img src="${url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>
+    <div><b>${label}</b><small>tap ✕ to remove</small></div>
+    <button class="snap-x" id="snapX" aria-label="Remove image">${ic('x')}</button>
+  </div>`;
+  refreshIcons();
+  p.querySelector('#snapX').addEventListener('click', clearSnapPreview);
+}
+
+/* ---- compress an already-square blob down to a size target ---- */
+function compressBlob(blob, maxKb = 50, out = 600) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      canvas.width = out; canvas.height = out;
+      canvas.getContext('2d').drawImage(img, 0, 0, out, out);
+      const tryQ = (q) => canvas.toBlob(b => {
+        if (!b) { reject(new Error('toBlob failed')); return; }
+        if (b.size <= maxKb * 1024 || q <= 0.1) resolve(b);
+        else tryQ(Math.round((q - 0.1) * 10) / 10);
+      }, 'image/jpeg', q);
+      tryQ(0.9);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('image load failed')); };
+    img.src = url;
+  });
+}
+
+/* ---- square crop modal: drag to reposition, slider to zoom ---- */
+function openCropper(file, onConfirm) {
+  const url = URL.createObjectURL(file);
+  const el = mountOverlay('cropModal');
+  el.innerHTML = `
+    <div class="dm-overlay"></div>
+    <div class="dm-sheet" style="max-width:420px">
+      <div class="dm-grab"></div>
+      <div class="ask-head">${ic('crop')}<div><b>Crop to square</b><small>Drag to reposition · slide to zoom</small></div></div>
+      <div class="crop-stage" id="cropStage"><img id="cropImg" src="${url}" alt="" draggable="false"></div>
+      <div class="crop-zoom-row">${ic('zoom-out')}<input type="range" id="cropZoom" min="1" max="3" step="0.01" value="1">${ic('zoom-in')}</div>
+      <div class="dm-actions">
+        <button class="btn ghost" id="cropCancel">Cancel</button>
+        <button class="btn" id="cropOk">${ic('check')} Use photo</button>
+      </div>
+    </div>`;
+  el.classList.add('open');
+  refreshIcons();
+
+  const stage = el.querySelector('#cropStage');
+  const img = el.querySelector('#cropImg');
+  const zoom = el.querySelector('#cropZoom');
+  let natW = 0, natH = 0, base = 1, scale = 1, x = 0, y = 0, S = 0;
+
+  const clamp = () => {
+    const dispW = natW * scale, dispH = natH * scale;
+    x = Math.min(0, Math.max(S - dispW, x));
+    y = Math.min(0, Math.max(S - dispH, y));
+  };
+  const apply = () => {
+    img.style.width = (natW * scale) + 'px';
+    img.style.height = (natH * scale) + 'px';
+    img.style.left = x + 'px';
+    img.style.top = y + 'px';
+  };
+  const setZoom = (z) => {
+    const cx = S / 2, cy = S / 2;
+    const wx = (cx - x) / scale, wy = (cy - y) / scale; // world point at stage center
+    scale = base * z;
+    x = cx - wx * scale; y = cy - wy * scale;
+    clamp(); apply();
+  };
+
+  const init = () => {
+    natW = img.naturalWidth; natH = img.naturalHeight;
+    if (!natW || !natH) return;
+    S = stage.clientWidth || 300;
+    base = S / Math.min(natW, natH); // cover
+    scale = base; x = (S - natW * scale) / 2; y = (S - natH * scale) / 2;
+    clamp(); apply();
+  };
+  img.onload = init;
+  if (img.complete && img.naturalWidth) init();
+
+  // drag to pan (pointer events cover mouse + touch)
+  let dragging = false, px = 0, py = 0;
+  stage.addEventListener('pointerdown', (e) => { dragging = true; px = e.clientX; py = e.clientY; stage.setPointerCapture(e.pointerId); });
+  stage.addEventListener('pointermove', (e) => { if (!dragging) return; x += e.clientX - px; y += e.clientY - py; px = e.clientX; py = e.clientY; clamp(); apply(); });
+  stage.addEventListener('pointerup', () => { dragging = false; });
+  stage.addEventListener('pointercancel', () => { dragging = false; });
+  zoom.addEventListener('input', () => setZoom(parseFloat(zoom.value)));
+
+  const close = () => { el.remove(); URL.revokeObjectURL(url); };
+  el.querySelector('.dm-overlay').addEventListener('click', close);
+  el.querySelector('#cropCancel').addEventListener('click', close);
+  el.querySelector('#cropOk').addEventListener('click', (ev) => {
+    const out = 600;
+    const canvas = document.createElement('canvas');
+    canvas.width = out; canvas.height = out;
+    const ctx = canvas.getContext('2d');
+    const sx = -x / scale, sy = -y / scale, sSize = S / scale;
+    ctx.drawImage(img, sx, sy, sSize, sSize, 0, 0, out, out);
+    canvas.toBlob((blob) => {
+      const previewUrl = canvas.toDataURL('image/jpeg', 0.85);
+      close();
+      if (blob) onConfirm(blob, previewUrl);
+    }, 'image/jpeg', 0.9);
+  });
 }
 
 function syncCauseNote() {

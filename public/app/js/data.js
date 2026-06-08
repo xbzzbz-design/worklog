@@ -175,12 +175,18 @@ const ENTRIES = [
 // attach computed units
 ENTRIES.forEach(e => { e._c = calcUnits(e); });
 
-/* ---- aggregation helpers ---- */
-function entriesOn(date) { return ENTRIES.filter(e => e.date === date); }
+/* ---- ownership ---- (personal views show only the signed-in user's work;
+   Team and Client views stay team-wide. During the mock/prototype there's no
+   current user, so everything counts as "mine".) */
+const isMine = (e) => !window.WL_CURRENT_USER_ID || e.userId === window.WL_CURRENT_USER_ID;
+const myEntries = () => ENTRIES.filter(isMine);
+
+/* ---- aggregation helpers (personal — scoped to me) ---- */
+function entriesOn(date) { return ENTRIES.filter(e => e.date === date && isMine(e)); }
 function dayTotal(date) { return entriesOn(date).reduce((s,e)=> s + e._c.final, 0); }
 function inRange(date, from, to) { return date >= from && date <= to; }
-function rangeEntries(from, to) { return ENTRIES.filter(e => inRange(e.date, from, to)); }
-function monthEntries(ym) { return ENTRIES.filter(e => e.date.startsWith(ym)); }
+function rangeEntries(from, to) { return ENTRIES.filter(e => inRange(e.date, from, to) && isMine(e)); }
+function monthEntries(ym) { return ENTRIES.filter(e => e.date.startsWith(ym) && isMine(e)); }
 function sum(arr, f) { return arr.reduce((s,x)=>s+f(x),0); }
 function isScope(e) { return e.isRevision && e.revisionCause === 'SCOPE_CREEP'; }
 

@@ -174,16 +174,20 @@ function openDetail(id) {
         <div class="dm-tr-sum">Thread total <b class="tnum">${u(sum(threadOf(e), t=>t._c.final))}</b> units across ${threadOf(e).length} jobs</div>
       </div>`:''}
       ${e.snap||e.driveLink?`<div class="dm-evid">${e.snap?(e.snap.startsWith('http')||e.snap.startsWith('/')?`<div class="dm-ev-img"><img src="${e.snap}" style="width:100%;border-radius:10px;max-height:200px;object-fit:cover;display:block"></div>`:`<div class="dm-ev"><span class="dm-ev-th">▦</span> ${e.snap}</div>`):''}${e.driveLink?`<div class="dm-ev"><span class="dm-ev-th">${ic('link')}</span> Drive link attached</div>`:''}</div>`:''}
-      <div class="dm-actions">
-        <button class="btn ghost" id="dmEdit">${ic('pencil')} Edit</button>
-        <button class="btn ghost danger" id="dmDelete">${ic('trash-2')} Delete</button>
-      </div>
+      ${isMine(e)
+        ? `<div class="dm-actions">
+            <button class="btn ghost" id="dmEdit">${ic('pencil')} Edit</button>
+            <button class="btn ghost danger" id="dmDelete">${ic('trash-2')} Delete</button>
+          </div>`
+        : `<div class="dm-byline">${ic('users-round')} Logged by ${(TEAM.find(m=>m.id===e.userId)||{}).name || 'a teammate'} · view only</div>`}
     </div>`;
   m.classList.add('open');
   refreshIcons();
   m.querySelector('.dm-overlay').addEventListener('click', closeDetail);
   let detailBusy = false; // guard against rapid double-taps on edit/delete
-  m.querySelector('#dmEdit').addEventListener('click', () => {
+  const editBtn = m.querySelector('#dmEdit');
+  const delBtn = m.querySelector('#dmDelete');
+  if (editBtn) editBtn.addEventListener('click', () => {
     if (detailBusy) return; detailBusy = true;
     draft = Object.assign(freshDraft(), {
       clientId: e.clientId,
@@ -216,7 +220,7 @@ function openDetail(id) {
     go('entry');
     toast('Entry loaded into the form', 'info');
   });
-  m.querySelector('#dmDelete').addEventListener('click', async () => {
+  if (delBtn) delBtn.addEventListener('click', async () => {
     if (detailBusy) return; detailBusy = true;
     const idx = ENTRIES.findIndex(x=>x.id===id);
     if (idx<0) { closeDetail(); return; }
