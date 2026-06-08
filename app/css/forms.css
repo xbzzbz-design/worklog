@@ -226,3 +226,7 @@ body[data-mode="mobile"] .desktop-only { display: none; }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 #toast svg { width: 18px; height: 18px; }
 #toast.good svg { color: oklch(0.8 0.13 152); }
+
+/* desktop paste tip under the evidence upload button */
+.ev-paste-hint { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); padding: 2px 2px 0; }
+.ev-paste-hint svg { width: 14px; height: 14px; color: var(--faint); }

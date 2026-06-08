@@ -335,6 +335,10 @@ body[data-theme="dark"] .botnav { background: oklch(0.235 0.013 66 / 0.85); }
 .sidebar nav button:hover { background: var(--line-2); }
 .sidebar nav button.on { background: var(--primary-tint); color: var(--primary-700); }
 .sidebar .sb-div { height: 1px; background: var(--line); margin: 10px 12px; }
+/* Quick log — sits with the "New entry" action but amber so it reads apart */
+.sidebar nav button.sb-quick { color: oklch(0.55 0.13 68); font-weight: 700; }
+.sidebar nav button.sb-quick svg { color: oklch(0.66 0.15 68); }
+.sidebar nav button.sb-quick:hover { background: var(--warn-soft); }
 .sidebar .sb-replay { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--ink-2); width: 100%; }
 .sidebar .sb-replay:hover { background: var(--line-2); }
 .sidebar .sb-replay svg { width: 16px; height: 16px; color: var(--primary); }

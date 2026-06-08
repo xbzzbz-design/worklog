@@ -461,7 +461,7 @@ async function init() {
     b.addEventListener('click', () => go(b.dataset.nav)));
   const mm = document.getElementById('mMenu');
   if (mm) mm.addEventListener('click', openMenu);
-  document.querySelectorAll('#qlFabM, #qlFabD').forEach(b =>
+  document.querySelectorAll('#qlFabM, #qlSidebar').forEach(b =>
     b.addEventListener('click', () => { if (window.openQuickLog) openQuickLog(); }));
   document.querySelectorAll('#mTheme, #dTheme').forEach(b => b.addEventListener('click', toggleTheme));
   initTheme();

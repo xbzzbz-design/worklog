@@ -198,6 +198,23 @@ function wireEntry(root) {
       else toast('Please drop an image file', 'info');
     });
   }
+
+  // paste an image straight from the clipboard (e.g. a Mac screenshot: Cmd+V)
+  // → runs the same crop → compress → upload flow. A single document-level
+  // listener, replaced each render so it never stacks; guarded to the form.
+  if (window._wlPasteHandler) document.removeEventListener('paste', window._wlPasteHandler);
+  window._wlPasteHandler = (e) => {
+    if (currentScreen !== 'entry') return;
+    const items = (e.clipboardData && e.clipboardData.items) || [];
+    for (const it of items) {
+      if (it.type && it.type.startsWith('image/')) {
+        const file = it.getAsFile();
+        if (file) { e.preventDefault(); toast('Image pasted — crop & save', 'info'); handleImageFile(file); return; }
+      }
+    }
+  };
+  document.addEventListener('paste', window._wlPasteHandler);
+
   $('#driveField').addEventListener('input', (e)=>{ draft.driveLink = e.target.value; saveDraft(); });
 
   /* --- STEP 10 flag / star --- */
