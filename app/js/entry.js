@@ -71,7 +71,7 @@ function renderEntry() {
   return `
   <div class="page form">
     <div class="greet" style="padding-bottom:10px">
-      <div class="eyebrow">New entry</div>
+      <div class="eyebrow">${draft.date && draft.date!==TODAY ? `${ic('calendar-days')} Logging for ${new Date(draft.date+'T00:00:00').toLocaleDateString('en-US',{weekday:'short',day:'numeric',month:'short'})}` : 'New entry'}</div>
       <h1><em>Log a piece of work</em></h1>
     </div>
     ${isDraftDirty(draft)?`<div class="draft-banner" id="draftBanner">${ic('history')}<span>Picked up your unsaved draft</span><button id="draftFresh">Start fresh</button></div>`:''}

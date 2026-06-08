@@ -152,6 +152,13 @@ function openDaySheet(date) {
           <b style="font-family:var(--serif);font-size:24px">${new Date(date).toLocaleDateString('en-US',{day:'numeric',month:'long'})}</b></div>
         <div class="dm-units"><b class="tnum" style="color:${over?'var(--bad)':'var(--good)'}">${u(total)}</b><small>${es.length} jobs</small></div>
       </div>
+      <div class="ds-add">
+        <span class="ds-add-lab">${ic('plus')} Add for this day</span>
+        <div class="ds-add-btns">
+          <button class="btn ghost" id="dsLog">${ic('pencil')} Log</button>
+          <button class="btn ghost ds-quick" id="dsQuick">${ic('zap')} Quick log</button>
+        </div>
+      </div>
       <div class="ds-list">${es.length?es.map(e=>entryCard(e)).join(''):`<div class="tl-empty" style="padding:30px 0">${ic(hol?'palmtree':lv?LEAVE_TYPES[lv.type].icon:'coffee')}<p>${hol?'Holiday — no expected workload.':lv?`On ${LEAVE_TYPES[lv.type].label.toLowerCase()} — this day won't count against you.`:'A rest day.'}</p></div>`}</div>
       ${weekend||hol?'':`<div class="ds-leave-row">
         <span class="ds-leave-label">${lv?'On leave:':'Not in today? Mark your own leave:'}</span>
@@ -166,6 +173,8 @@ function openDaySheet(date) {
   m.classList.add('open');
   refreshIcons();
   m.querySelector('.dm-overlay').addEventListener('click', closeDetail);
+  m.querySelector('#dsLog').addEventListener('click', ()=>{ closeDetail(); logForDate(date); });
+  m.querySelector('#dsQuick').addEventListener('click', ()=>{ closeDetail(); openQuickLog(date); });
   m.querySelectorAll('[data-entry]').forEach(el=>el.addEventListener('click',()=>openDetail(el.dataset.entry)));
   m.querySelectorAll('[data-leave]').forEach(b=>b.addEventListener('click', ()=> runAction(b, async ()=>{
     const t = b.dataset.leave;
