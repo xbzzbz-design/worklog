@@ -39,7 +39,10 @@ function mountOverlay(id) {
 
 function go(name) {
   currentScreen = name;
-  if (name === 'entry') draft = loadDraft();
+  // Only (re)load the draft from storage when we don't already have an in-progress
+  // one in memory. This keeps the form's state (client, etc.) intact across
+  // re-renders even if localStorage writes silently fail (e.g. Safari private mode).
+  if (name === 'entry' && (!draft || !isDraftDirty(draft))) draft = loadDraft();
   const mount = activeMount();
   const screen = SCREENS[name];
 
