@@ -146,6 +146,9 @@ function wireDelegation(mount) {
   mount.querySelectorAll('[data-quick-first]').forEach(el => {
     el.addEventListener('click', () => openDetail(el.dataset.quickFirst));
   });
+  mount.querySelectorAll('[data-whatsnew-dismiss]').forEach(el => {
+    el.addEventListener('click', () => dismissWhatsNew());
+  });
 }
 
 /* ---- entry detail modal ---- */
