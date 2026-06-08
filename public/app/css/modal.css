@@ -151,3 +151,13 @@ body[data-mode="desktop"] .dm-grab { display: none; }
 .ql-detail-note svg { width: 16px; height: 16px; flex: none; margin-top: 1px; color: var(--primary); }
 #detailModal .ql-detail-head + .ql-detail-note + .btn { margin-top: 0; }
 #detailModal .btn.full + .btn.full { margin-top: 10px; }
+
+/* day sheet — add log / quick log for a specific calendar day */
+.ds-add { margin: 14px 0 4px; }
+.ds-add-lab { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+.ds-add-lab svg { width: 14px; height: 14px; }
+.ds-add-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ds-add-btns .btn { width: 100%; }
+.ds-add-btns .ds-quick { color: oklch(0.55 0.13 68); border-color: oklch(0.8 0.09 70); }
+.ds-add-btns .ds-quick:hover { background: var(--warn-soft); border-color: oklch(0.74 0.12 72); }
+.ds-add-btns .ds-quick svg { color: oklch(0.66 0.15 68); }

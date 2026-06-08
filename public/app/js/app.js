@@ -42,7 +42,14 @@ function go(name) {
   // Only (re)load the draft from storage when we don't already have an in-progress
   // one in memory. This keeps the form's state (client, etc.) intact across
   // re-renders even if localStorage writes silently fail (e.g. Safari private mode).
-  if (name === 'entry' && (!draft || !isDraftDirty(draft))) draft = loadDraft();
+  if (name === 'entry') {
+    if (!draft || !isDraftDirty(draft)) draft = loadDraft();
+    // logging for a specific calendar day (back/forward dated) — sticks across
+    // re-renders while we're on the form, cleared once we leave it (below)
+    if (window._pendingEntryDate) draft.date = window._pendingEntryDate;
+  } else {
+    window._pendingEntryDate = null;
+  }
   const mount = activeMount();
   const screen = SCREENS[name];
 
@@ -89,6 +96,13 @@ function go(name) {
 }
 
 function rerenderScreen(name) { if (currentScreen === name) go(name); }
+
+// open the full entry form pre-set to a specific calendar day (back/forward dated)
+function logForDate(date) {
+  window._pendingEntryDate = date;
+  if (draft && isDraftDirty(draft)) draft.date = date; // apply to an in-progress draft too
+  go('entry');
+}
 
 function updateNav(name) {
   const navKey = name === 'clientDetail' ? 'clients' : name;
