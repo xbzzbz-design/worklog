@@ -5,6 +5,11 @@
 // lucide icon span
 function ic(name, attrs='') { return `<i data-lucide="${name}" ${attrs}></i>`; }
 
+// escape user text before putting it in innerHTML (names, notes, etc.)
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[m]));
+}
+
 function avatarClass(id) {
   const i = CLIENTS.findIndex(c => c.id === id);
   return 'c' + (((i % 6) + 6) % 6);
