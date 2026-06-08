@@ -120,17 +120,22 @@ function openPdfPreview() {
 
   /* ---- PAGE: appendix evidence ---- */
   const evid = s.es.filter(e=>e.snap || e.driveLink);
+  const isImg = (v) => v && (v.startsWith('http') || v.startsWith('/'));
   pages.push(`
     <div class="pdf-sec-t">Appendix — delivery evidence</div>
-    <table class="pdf-log evid-table">
-      <thead><tr><th>Date</th><th>Client</th><th>Job</th><th>Evidence</th></tr></thead>
-      <tbody>
-        ${evid.length ? evid.map(e=>`<tr>
-          <td>${fmtDate(e.date)}</td><td>${clientName(e.clientId)}</td><td>${JOB_TYPES[e.jobType].short}</td>
-          <td>${e.snap?`<span class="evid-thumb">▦</span> ${e.snap}`:''}${e.driveLink?`<a class="evid-link">${e.driveLink}</a>`:''}</td>
-        </tr>`).join('') : `<tr><td colspan="4" class="empty">No evidence attached this period</td></tr>`}
-      </tbody>
-    </table>
+    <div class="evid-grid">
+      ${evid.length ? evid.map(e=>`
+        <div class="evid-card">
+          <div class="evid-shot">${isImg(e.snap)
+            ? `<img src="${e.snap}" alt="">`
+            : `<span class="evid-ph">${e.snap ? '&#9638;' : '&#128279;'}</span>`}</div>
+          <div class="evid-meta">
+            <b>${escHtml(clientName(e.clientId))}</b>
+            <span>${fmtDate(e.date)} · ${(JOB_TYPES[e.jobType]||{short:e.jobType}).short}</span>
+            ${e.driveLink ? `<span class="evid-drive">Google Drive link attached</span>` : ''}
+          </div>
+        </div>`).join('') : `<div class="evid-empty">No evidence attached this period</div>`}
+    </div>
     <p class="pdf-footnote">Quick-snap images and Google Drive links attached here are evidence of work actually delivered.</p>
   `);
 
