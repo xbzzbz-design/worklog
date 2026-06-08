@@ -86,8 +86,9 @@
 .cd-hero { display: flex; align-items: center; gap: 16px; }
 .cd-hero .av { display: grid; place-items: center; flex: 0 0 auto; }
 .cd-rate { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
-.cd-actions { margin: 18px 0 4px; }
-.cd-actions .btn { width: 100%; }
+.cd-actions { margin: 18px 0 4px; display: flex; gap: 8px; flex-wrap: wrap; }
+.cd-actions .btn { flex: 1 1 30%; min-width: 110px; width: auto; }
+.cd-actions .btn.danger { color: var(--bad-ink); }
 
 /* ---------- SETTINGS ---------- */
 .set-sec { margin-bottom: 24px; }

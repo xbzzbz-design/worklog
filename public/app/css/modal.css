@@ -40,6 +40,9 @@ body[data-mode="desktop"] .dm-grab { display: none; }
 .dm-ev { display: flex; align-items: center; gap: 10px; padding: 11px 13px; background: var(--paper-2); border-radius: 10px; font-size: 13px; font-weight: 600; }
 .dm-ev-th { width: 30px; height: 30px; border-radius: 7px; background: var(--card); display: grid; place-items: center; color: var(--muted); }
 .dm-ev-th svg { width: 15px; height: 15px; }
+/* client add/edit/delete modal (created on open, removed on close) */
+#clientFormModal { position: absolute; inset: 0; z-index: 270; }
+
 /* square crop modal */
 #cropModal { position: absolute; inset: 0; z-index: 340; display: none; }
 #cropModal.open { display: block; }

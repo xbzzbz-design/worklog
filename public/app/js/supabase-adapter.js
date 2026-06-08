@@ -267,6 +267,29 @@
     return client;
   }
 
+  async function updateClientName(id, name) {
+    await requireUser();
+    const { error } = await sb.from('clients').update({ name }).eq('id', id);
+    if (error) throw error;
+    const client = CLIENTS.find(c => c.id === id);
+    if (client) client.name = name;
+    CLIENTS.sort((a, b) => a.name.localeCompare(b.name));
+    return client;
+  }
+
+  async function deleteClient(id) {
+    await requireUser();
+    // Block delete when the client has logged work anywhere on the team — those
+    // entries reference it. Archive is the safe path for real clients.
+    const { count, error: cErr } = await sb.from('entries').select('id', { count: 'exact', head: true }).eq('client_id', id);
+    if (cErr) throw cErr;
+    if (count && count > 0) throw new Error(`This client has ${count} logged ${count === 1 ? 'entry' : 'entries'} — archive it instead of deleting`);
+    const { error } = await sb.from('clients').delete().eq('id', id);
+    if (error) throw error;
+    const idx = CLIENTS.findIndex(c => c.id === id);
+    if (idx >= 0) CLIENTS.splice(idx, 1);
+  }
+
   async function createHelpRequest(payload) {
     const user = await requireUser();
     const { data, error } = await sb.from('help_requests').insert({
@@ -408,6 +431,7 @@
     bootstrap, saveEntry, updateEntry, deleteEntry, createClient, setClientArchived,
     createHelpRequest, claimHelpRequest, resolveHelpRequest, deleteHelpRequest,
     updateProfile, updateTeamSettings, updateRates, deleteHoliday, createHoliday, setLeave, clearLeave,
+    updateClientName, deleteClient,
     supabase: sb
   };
   window.WLStoreErrorText = (err) => {

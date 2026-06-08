@@ -16,40 +16,77 @@ function clientStats(id) {
 }
 function rateClass(r) { return r<20?'g':r<=50?'y':'r'; }
 
-function openClientCreate(onCreated) {
-  const el = mountOverlay('clientCreateModal');
+function openClientForm(existing, onDone) {
+  const editing = !!existing;
+  const el = mountOverlay('clientFormModal');
   el.innerHTML = `
     <div class="dm-overlay"></div>
     <div class="dm-sheet">
       <div class="dm-grab"></div>
-      <div class="ask-head">${ic('contact')}<div><b>Add client</b><small>Create the client once, then everyone can log against it.</small></div></div>
+      <div class="ask-head">${ic(editing?'pencil':'contact')}<div><b>${editing?'Edit client':'Add client'}</b><small>${editing?'Rename this client — it updates everywhere.':'Create the client once, then everyone can log against it.'}</small></div></div>
       <div class="ask-body">
-        <input id="newClientName" class="ask-in" placeholder="Client name" autocomplete="off">
+        <input id="clientNameInput" class="ask-in" placeholder="Client name" autocomplete="off" value="${editing?escHtml(existing.name):''}">
       </div>
       <div class="dm-actions">
         <button class="btn ghost" id="clientCancel">Cancel</button>
-        <button class="btn" id="clientSave">${ic('plus')} Add client</button>
+        <button class="btn" id="clientSave">${ic(editing?'check':'plus')} ${editing?'Save':'Add client'}</button>
       </div>
     </div>`;
+  el.classList.add('open');
   refreshIcons();
   const close = () => el.remove();
   el.querySelector('.dm-overlay').addEventListener('click', close);
   el.querySelector('#clientCancel').addEventListener('click', close);
-  const input = el.querySelector('#newClientName');
+  const input = el.querySelector('#clientNameInput');
   setTimeout(()=>input.focus(), 50);
   el.querySelector('#clientSave').addEventListener('click', (ev) => {
     const name = input.value.trim();
     if (!name) { input.focus(); return; }
     runAction(ev.currentTarget, async () => {
-      const client = window.WLStore && window.WLStore.createClient
-        ? await window.WLStore.createClient(name)
-        : (() => { const c = { id:'c'+Date.now(), name, archived:false }; CLIENTS.push(c); return c; })();
+      let result;
+      if (editing) {
+        if (window.WLStore && window.WLStore.updateClientName) await window.WLStore.updateClientName(existing.id, name);
+        else existing.name = name;
+        result = existing;
+      } else {
+        result = window.WLStore && window.WLStore.createClient
+          ? await window.WLStore.createClient(name)
+          : (() => { const c = { id:'c'+Date.now(), name, archived:false }; CLIENTS.push(c); return c; })();
+      }
       close();
-      if (onCreated) onCreated(client);
-      else rerenderScreen('clients');
-      toast('Client added', 'good');
-    }, 'Could not add client');
+      if (onDone) onDone(result);
+      else rerenderScreen(editing ? 'clientDetail' : 'clients');
+      toast(editing ? 'Client updated' : 'Client added', 'good');
+    }, editing ? 'Could not update client' : 'Could not add client');
   });
+}
+function openClientCreate(onCreated) { openClientForm(null, onCreated); }
+function openClientEdit(client, onDone) { openClientForm(client, onDone); }
+
+function confirmDeleteClient(c) {
+  const el = mountOverlay('clientFormModal');
+  el.innerHTML = `
+    <div class="dm-overlay"></div>
+    <div class="dm-sheet">
+      <div class="dm-grab"></div>
+      <div class="ask-head">${ic('trash-2')}<div><b>Delete ${escHtml(c.name)}?</b><small>This can't be undone. A client with logged work can't be deleted — archive it instead.</small></div></div>
+      <div class="dm-actions">
+        <button class="btn ghost" id="delCancel">Cancel</button>
+        <button class="btn danger" id="delConfirm">${ic('trash-2')} Delete</button>
+      </div>
+    </div>`;
+  el.classList.add('open');
+  refreshIcons();
+  const close = () => el.remove();
+  el.querySelector('.dm-overlay').addEventListener('click', close);
+  el.querySelector('#delCancel').addEventListener('click', close);
+  el.querySelector('#delConfirm').addEventListener('click', (ev)=> runAction(ev.currentTarget, async ()=>{
+    if (window.WLStore && window.WLStore.deleteClient) await window.WLStore.deleteClient(c.id);
+    else { const i=CLIENTS.findIndex(x=>x.id===c.id); if(i>=0) CLIENTS.splice(i,1); }
+    close();
+    go('clients');
+    toast('Client deleted', 'info');
+  }, 'Could not delete client'));
 }
 
 function renderClients() {
@@ -61,7 +98,7 @@ function renderClients() {
     return `<button class="cli-row" data-client-detail="${c.id}">
       <span class="av ${avatarClass(c.id)}">${clientInitials(c.id)}</span>
       <span class="cli-body">
-        <span class="cli-name">${c.name}${s.scope?` <span class="badge-warn">${ic('triangle-alert')}${s.scope}</span>`:''}</span>
+        <span class="cli-name">${escHtml(c.name)}${s.scope?` <span class="badge-warn">${ic('triangle-alert')}${s.scope}</span>`:''}</span>
         <span class="cli-sub">${s.count} entries · <b class="tnum">${u(s.total)}</b> units · ${s.revRate}% rev</span>
       </span>
       <span class="cli-diff diff-${d.tier.tone}"><b class="tnum">${d.score}</b><small>${d.tier.label}</small></span>
@@ -102,7 +139,7 @@ function renderClientDetail() {
     <div class="cd-hero">
       <span class="av ${avatarClass(c.id)}" style="width:60px;height:60px;border-radius:18px;font-size:22px">${clientInitials(c.id)}</span>
       <div>
-        <h1 style="font-family:var(--serif);font-weight:400;font-size:28px;line-height:1.05">${c.name}</h1>
+        <h1 style="font-family:var(--serif);font-weight:400;font-size:28px;line-height:1.05">${escHtml(c.name)}</h1>
         <div class="cd-rate"><span class="revrate ${rateClass(s.revRate)}">${s.revRate}% revision rate</span>${s.scope?`<span class="badge-warn">${ic('triangle-alert')} ${s.scope} scope flag${s.scope>1?'s':''}</span>`:''}</div>
       </div>
     </div>
@@ -113,7 +150,9 @@ function renderClientDetail() {
       <div class="stat ${s.scope?'warnbg':''}"><div class="lab">${ic('triangle-alert')} Scope flags</div><div class="val tnum">${s.scope}</div><div class="cap">${s.scope?'difficulty evidence':'smooth sailing'}</div></div>
     </div>
     <div class="cd-actions">
-      <button class="btn ghost" data-archive="${c.id}">${ic(c.archived?'archive-restore':'archive')} ${c.archived?'Unarchive':'Archive'} client</button>
+      <button class="btn ghost" data-edit-client="${c.id}">${ic('pencil')} Rename</button>
+      <button class="btn ghost" data-archive="${c.id}">${ic(c.archived?'archive-restore':'archive')} ${c.archived?'Unarchive':'Archive'}</button>
+      <button class="btn ghost danger" data-delete-client="${c.id}">${ic('trash-2')} Delete</button>
     </div>
 
     <div class="section-h"><h2>Client difficulty</h2></div>
@@ -159,4 +198,14 @@ function wireClientDetail(root) {
       throw err;
     }
   }, 'Could not update client'));
+  const eb = root.querySelector('[data-edit-client]');
+  if (eb) eb.addEventListener('click', ()=>{
+    const c=CLIENTS.find(x=>x.id===eb.dataset.editClient);
+    if (c) openClientEdit(c, ()=>go('clientDetail'));
+  });
+  const db = root.querySelector('[data-delete-client]');
+  if (db) db.addEventListener('click', ()=>{
+    const c=CLIENTS.find(x=>x.id===db.dataset.deleteClient);
+    if (c) confirmDeleteClient(c);
+  });
 }
