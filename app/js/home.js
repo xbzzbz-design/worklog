@@ -190,7 +190,7 @@ function portfolioShot(e) {
   return `<div class="shot" data-entry="${e.id}">
     <div class="thumb">
       ${isUrl
-        ? `<img src="${e.snap}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;display:block">`
+        ? `<img src="${e.snap}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block">`
         : e.snap
           ? `<div class="ph">${ic('image')} snap</div>`
           : `<div class="ph">${ic('link')} drive link</div>`}
