@@ -8,56 +8,59 @@ let balanceEven = false;
 function renderTeam() {
   const weekStart = startOfWeek(new Date(TODAY + 'T00:00:00'));
   const weekDates = Array.from({ length: 5 }, (_, i) => isoDate(addDays(weekStart, i)));
-  const daily = Object.fromEntries(weekDates.map(d => [d, sum(ENTRIES.filter(e => e.date === d), e => e._c.final)]));
   const weeklyEntries = ENTRIES.filter(e => weekDates.includes(e.date));
-  const memberWeek = {};
-  weeklyEntries.forEach(e => { memberWeek[e.userId] = (memberWeek[e.userId] || 0) + e._c.final; });
   const split = {
     newWork: sum(weeklyEntries.filter(e => !e.isRevision && e.jobType !== 'OTHER'), e => e._c.final),
     revision: sum(weeklyEntries.filter(e => e.isRevision), e => e._c.final),
     meeting: sum(weeklyEntries.filter(e => e.jobType === 'OTHER'), e => e._c.final),
   };
   const scopeCount = weeklyEntries.filter(isScope).length;
-  const a = teamAnalysis(daily);
-  const utilPct = Math.round(a.util * 100);
-  const over100 = a.util > 1.0;
-  const utilTone = over100 ? 'over' : a.util >= 0.85 ? 'good' : a.util >= 0.6 ? 'mid' : 'warn';
 
-  // members in stable (team) order — NOT ranked by output. Each measured against their OWN capacity.
-  const members = TEAM.map(m => {
-    const units = memberWeek[m.id] || 0;
-    const cap = memberCapacity(m.id, a.days);
-    const pct = cap ? Math.round(units/cap*100) : 0;
-    const onLeave = leaveDaysInList(m.id, a.days);
-    return { ...m, units, cap, pct, onLeave };
-  });
-  const overloaded = members.filter(m=>m.pct>100).length;
+  const p = teamPulse(weekDates);
+  const hasData = p.coverage.logged > 0;
+  const st = loadStatus(p.maxUtil);
+  const heavy = p.loggedMembers.filter(m => m.util > 1.0).length;
 
   const splitTotal = split.newWork + split.revision + split.meeting;
-  const pct = (n)=> splitTotal ? Math.round(n/splitTotal*100) : 0;
+  const pct = (n) => splitTotal ? Math.round(n / splitTotal * 100) : 0;
 
   return `
   <div class="page team">
     <div class="greet" style="padding-bottom:14px">
       <div class="eyebrow">Team</div>
       <h1><em>What we carried together</em></h1>
-      <div class="sub">The whole squad, this week — capacity, where it went, and how everyone's holding up.</div>
+      <div class="sub">How the squad is holding up this week — read as load and balance, never a scoreboard.</div>
     </div>
 
-    <!-- CAPACITY ROLL-UP -->
-    <div class="cap-card">
-      <div class="cap-head">
-        <div>
-          <div class="cap-big"><b class="tnum">${u(a.total)}</b><span> / ${u(a.capacity)} units</span></div>
-          <div class="cap-sub">${TEAM.length} designers · ${a.workdays} workdays · capacity set per person${a.leaveLost?` · −${u(a.leaveLost)} on leave`:''}</div>
-        </div>
-        <div class="cap-util util-${utilTone}"><b class="tnum">${utilPct}%</b><small>utilised</small></div>
+    <!-- TEAM PULSE (colour state, computed daily) -->
+    ${hasData ? `
+    <div class="pulse-card pulse-${st.key}">
+      <div class="pulse-head">
+        <span class="pulse-orb"></span>
+        <div class="pulse-lab"><b>${st.label}</b><small>${st.sub}</small></div>
+        <div class="pulse-cov">${p.coverage.missing
+          ? `${p.coverage.logged}/${p.coverage.total}<small>logged</small>`
+          : `all in<small>${p.coverage.total} logged</small>`}</div>
       </div>
-      <div class="cap-gauge"><div class="cap-fill util-${utilTone==='over'?'over':utilTone}" style="width:${Math.min(100,utilPct)}%"></div></div>
-      <div class="cap-line">${ic(over100?'triangle-alert':'info')} ${over100
-        ? `<b>Over capacity at ${utilPct}%</b> — with people on leave, the rest of the team absorbed more than a sustainable week. This is the staffing conversation, in one number.`
-        : `A hard-working week at <b>${utilPct}% utilisation</b> — this is a team carrying real load, not a team with time to spare.`}</div>
-    </div>
+      <div class="pulse-days">
+        ${p.days.map(d => {
+          const has = p.utilByDay[d + '_has'];
+          const k = has ? loadStatus(p.utilByDay[d]).key : 'none';
+          const dt = new Date(d + 'T00:00:00');
+          const today = d === TODAY;
+          return `<div class="pulse-day">
+            <span class="pulse-pip pip-${k} ${today ? 'pip-today' : ''}"></span>
+            <span class="pulse-dow">${dt.toLocaleDateString('en-US', { weekday: 'short' })[0]}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      ${p.coverage.missing ? `<div class="pulse-note">${ic('info')} Based on the ${p.coverage.logged} who logged — ${p.coverage.missing} not in yet, and not counted against the team.</div>` : ''}
+      <div class="pulse-foot">${ic('shield-check')} This is the team's own evidence. The fuller everyone logs, the stronger the case for fair staffing — your log protects the whole team, not just you.</div>
+    </div>` : `
+    <div class="pulse-card pulse-none">
+      <div class="pulse-head"><span class="pulse-orb"></span><div class="pulse-lab"><b>No logs yet this week</b><small>the picture fills in as people log</small></div></div>
+      <div class="pulse-foot">${ic('shield-check')} Log your work to start the team's record — it's how we make the case for fair load together.</div>
+    </div>`}
 
     <!-- WHERE CAPACITY WENT -->
     <div class="section-h"><h2>Where the hours went</h2></div>
@@ -75,52 +78,49 @@ function renderTeam() {
       <div class="split-note">${ic('rotate-ccw')} <b>${pct(split.revision)}% went to revisions</b> and ${scopeCount} were scope-creep — capacity spent on rework the team didn't create. That's a process cost, not a productivity gap.</div>
     </div>
 
-    <!-- HOW EVERYONE'S HOLDING UP (not a ranking) -->
-    <div class="section-h"><h2>How everyone's holding up</h2>${overloaded?`<span class="link warn-link">${overloaded} over their line</span>`:`<span class="link">all in a healthy range</span>`}</div>
+    <!-- HOW EVERYONE'S HOLDING UP (status, not a ranking — no numbers) -->
+    <div class="section-h"><h2>How everyone's holding up</h2>${heavy ? `<span class="link warn-link">${heavy} had a heavy week</span>` : `<span class="link">all in a healthy range</span>`}</div>
     <div class="mem-list">
-      ${members.map(m=>{
-        const tone = m.pct>100 ? 'over' : m.pct>=70 ? 'good' : m.pct>=40 ? 'mid' : 'warn';
-        const capW = Math.min(100, m.pct);
-        const overW = m.pct>100 ? Math.min(100, m.pct-100) : 0;
-        return `<div class="mem-row ${m.pct>100?'mem-over':''}">
-          <span class="av ${'c'+m.colorIdx}">${m.initials}</span>
+      ${p.loggedMembers.map(m => {
+        const ms = loadStatus(m.util);
+        return `<div class="mem-row">
+          <span class="av ${'c' + m.colorIdx}">${m.initials}</span>
           <div class="mem-body">
-            <div class="mem-name">${m.name}${m.you?' <span class="you-tag">you</span>':''}
-              ${m.onLeave?`<span class="mem-leave">${ic('palmtree')} ${m.onLeave}d leave</span>`:''}
-              ${m.pct>100?`<span class="mem-help">${ic('hand')} could use a hand</span>`:''}</div>
-            <div class="mem-bar"><div class="bar-fill util-${tone==='over'?'good':tone}" style="width:${capW}%"></div>${overW?`<div class="bar-over" style="width:${overW}%"></div>`:''}</div>
+            <div class="mem-name">${m.name}${m.you ? ' <span class="you-tag">you</span>' : ''}
+              ${m.onLeave ? `<span class="mem-leave">${ic('palmtree')} ${m.onLeave}d leave</span>` : ''}</div>
+            <div class="mem-status st-${ms.key}"><span class="st-pip"></span>${ms.label}</div>
           </div>
-          <div class="mem-units"><b class="tnum">${m.pct}%</b><small>${u(m.units)}/${u(m.cap)}</small></div>
         </div>`;
       }).join('')}
     </div>
-    <div class="mem-caption">${ic('info')} Listed by name, not output — measured against each person's own healthy capacity. Over 100% means too much landed on them, not that others did less.</div>
+    ${p.coverage.missing ? `<div class="mem-caption">${ic('users-round')} ${p.coverage.missing} teammate${p.coverage.missing > 1 ? 's' : ''} haven't logged this week — not shown here, and not held against anyone.</div>`
+      : `<div class="mem-caption">${ic('info')} Status, not output — measured against each person's own healthy capacity. "Heavy week" means too much landed on them, not that others did less.</div>`}
 
     <!-- BALANCE / SMOOTHING -->
-    <div class="section-h"><h2>Balance view</h2><span class="link" id="balToggle">${balanceEven?'Show actual':'If evenly scheduled'}</span></div>
-    ${balanceChart(a)}
-
-    ${balanceMessage(a)}
+    ${hasData ? `<div class="section-h"><h2>Balance view</h2><span class="link" id="balToggle">${balanceEven ? 'Show actual' : 'If evenly scheduled'}</span></div>
+    ${balanceChart(p)}
+    ${balanceMessage(p)}` : ''}
   </div>`;
 }
 
-function balanceChart(a) {
-  const peak = Math.max(a.capPerDay, ...a.days.map(d=>a.daily[d])) * 1.08;
+function balanceChart(p) {
+  const peak = Math.max(p.capPerDay, ...p.days.map(d => p.loadByDay[d]), ...p.days.map(d => p.capByDay[d])) * 1.08 || 1;
   return `<div class="bal-card">
     <div class="bal-chart">
-      <div class="bal-capline" style="bottom:${(a.capPerDay/peak)*100}%"><span>capacity ${u(a.capPerDay)}</span></div>
-      ${balanceEven?`<div class="bal-evenline" style="bottom:${(a.evenPerDay/peak)*100}%"><span>even ${u(a.evenPerDay)}</span></div>`:''}
+      <div class="bal-capline" style="bottom:${(p.capPerDay / peak) * 100}%"><span>avg capacity ${u(p.capPerDay)}</span></div>
+      ${balanceEven ? `<div class="bal-evenline" style="bottom:${(p.evenPerDay / peak) * 100}%"><span>even ${u(p.evenPerDay)}</span></div>` : ''}
       <div class="bal-bars">
-        ${a.days.map(d=>{
-          const val = balanceEven ? a.evenPerDay : a.daily[d];
-          const over = val > a.capPerDay + 0.01;
-          const dt = new Date(d+'T00:00:00');
+        ${p.days.map(d => {
+          const val = balanceEven ? p.evenPerDay : p.loadByDay[d];
+          const cap = p.capByDay[d] || p.capPerDay;
+          const over = !balanceEven && val > cap + 0.01;
+          const dt = new Date(d + 'T00:00:00');
           return `<div class="bal-col">
-            <div class="bal-stack" style="height:${(val/peak)*100}%">
-              ${over?`<div class="bal-over" style="height:${((val-a.capPerDay)/val)*100}%"></div>`:''}
-              <div class="bal-base ${over?'isover':''}"></div>
+            <div class="bal-stack" style="height:${Math.min(100, (val / peak) * 100)}%">
+              ${over ? `<div class="bal-over" style="height:${((val - cap) / val) * 100}%"></div>` : ''}
+              <div class="bal-base ${over ? 'isover' : ''}"></div>
             </div>
-            <div class="bal-x">${dt.toLocaleDateString('en-US',{weekday:'short'})}</div>
+            <div class="bal-x">${dt.toLocaleDateString('en-US', { weekday: 'short' })}</div>
           </div>`;
         }).join('')}
       </div>
@@ -133,15 +133,15 @@ function balanceChart(a) {
   </div>`;
 }
 
-function balanceMessage(a) {
-  const idleWins = a.idle > a.overtime;
-  return `<div class="bal-msg ${idleWins?'flip':''}">
+function balanceMessage(p) {
+  const idleWins = p.idle > p.overtime;
+  return `<div class="bal-msg ${idleWins ? 'flip' : ''}">
     <div class="bal-msg-row">
-      <div class="bal-stat"><span>${ic('flame')} Overtime</span><b class="tnum">${u(a.overtime)}</b><small>units over capacity</small></div>
-      <div class="bal-stat"><span>${ic('wind')} Idle capacity</span><b class="tnum">${u(a.idle)}</b><small>units of unused room</small></div>
+      <div class="bal-stat"><span>${ic('flame')} Overtime</span><b class="tnum">${u(p.overtime)}</b><small>units over capacity</small></div>
+      <div class="bal-stat"><span>${ic('wind')} Idle capacity</span><b class="tnum">${u(p.idle)}</b><small>units of unused room</small></div>
     </div>
     <p class="bal-verdict">${idleWins
-      ? `Across the week the team had <b>${u(a.idle)} units of spare capacity</b> — more than the <b>${u(a.overtime)} units</b> of overtime people were pushed into. The work <b>fit comfortably</b> in a normal week. The crunch on ${a.crunchDays} day${a.crunchDays===1?'':'s'} wasn't too much work, and it wasn't too little effort — it was <b>uneven scheduling</b>. Spread the same load evenly and no one goes over.`
+      ? `Across the week the team had <b>${u(p.idle)} units of spare capacity</b> — more than the <b>${u(p.overtime)} units</b> of overtime people were pushed into. The work <b>fit comfortably</b> in a normal week. The crunch on ${p.crunchDays} day${p.crunchDays === 1 ? '' : 's'} wasn't too much work, and it wasn't too little effort — it was <b>uneven scheduling</b>. Spread the same load evenly and no one goes over.`
       : `The team ran hot — overtime outweighed idle time. That's a signal the volume itself is beyond current capacity, and worth raising as a staffing conversation.`}</p>
     <div class="bal-foot">${ic('shield-check')} This is the team's own record. Distribute work better and the busy days simply disappear.</div>
   </div>`;
