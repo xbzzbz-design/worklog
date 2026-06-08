@@ -11,7 +11,7 @@ function avatarClass(id) {
 }
 
 function jobBadge(type) {
-  const jt = JOB_TYPES[type];
+  const jt = JOB_TYPES[type] || { color: 'var(--muted)', short: type || '—' };
   return `<span class="jt"><span class="dot" style="background:${jt.color}"></span>${jt.short}</span>`;
 }
 
@@ -29,7 +29,7 @@ function newRevBadge(e) {
 
 // compact entry card
 function entryCard(e, opts={}) {
-  const c = e._c;
+  const c = e._c || (e._c = calcUnits(e));
   const over = c.overridden;
   const flags = [];
   if (isScope(e)) flags.push(`<span style="color:var(--bad)">${ic('triangle-alert')}</span>`);

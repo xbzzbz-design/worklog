@@ -43,16 +43,30 @@ function go(name) {
   const mount = activeMount();
   const screen = SCREENS[name];
 
-  // wide layout on desktop
-  mount.innerHTML = `<div class="screen-pane active">${screen.render()}</div>`;
-  if (mode() === 'desktop') {
-    const pane = mount.querySelector('.page');
-    if (pane) pane.classList.add('wide');
+  try {
+    // wide layout on desktop
+    mount.innerHTML = `<div class="screen-pane active">${screen.render()}</div>`;
+    if (mode() === 'desktop') {
+      const pane = mount.querySelector('.page');
+      if (pane) pane.classList.add('wide');
+    }
+    refreshIcons();
+    if (screen.wire) screen.wire(mount);
+    wireDelegation(mount);
+  } catch (err) {
+    // never leave a blank/frozen screen — show a recoverable message
+    console.error('Screen render failed:', name, err);
+    const msg = window.WLStoreErrorText ? window.WLStoreErrorText(err) : (err && err.message) || 'Unknown error';
+    mount.innerHTML = `<div class="page"><div class="greet"><h1><em>Something hiccupped</em></h1></div>
+      <div class="set-note">${ic('triangle-alert')} This screen couldn't load: ${msg}</div>
+      <button class="btn full lg" id="screenRetry" style="margin-top:14px">${ic('rotate-ccw')} Try again</button>
+      <button class="btn ghost full" id="screenHome" style="margin-top:10px">${ic('house')} Back to home</button></div>`;
+    refreshIcons();
+    const r = mount.querySelector('#screenRetry'); if (r) r.addEventListener('click', ()=>go(name));
+    const h = mount.querySelector('#screenHome'); if (h) h.addEventListener('click', ()=>go('home'));
+    updateNav(name);
+    return;
   }
-
-  refreshIcons();
-  if (screen.wire) screen.wire(mount);
-  wireDelegation(mount);
   updateNav(name);
   mount.scrollTop = 0;
 

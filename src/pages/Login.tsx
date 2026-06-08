@@ -22,11 +22,17 @@ export default function Login() {
     setError('')
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
-      options: { emailRedirectTo: appRedirectUrl() },
+      // Never create accounts from the login screen — only people the admin has
+      // invited can sign in. A magic link still only works for whoever controls
+      // that email inbox, so this is safe across as many devices as they like.
+      options: { emailRedirectTo: appRedirectUrl(), shouldCreateUser: false },
     })
     setLoading(false)
     if (error) {
-      setError(error.message)
+      const notInvited = /signups? not allowed|not allowed for otp|user not found/i.test(error.message)
+      setError(notInvited
+        ? "That email isn't on the team yet — ask your admin to invite you."
+        : error.message)
     } else {
       setSent(true)
     }
