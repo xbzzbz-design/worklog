@@ -231,8 +231,9 @@
   async function updateEntry(id, entry) {
     const user = await requireUser();
     const payload = toDbEntry(entry, user.id);
-    const { data, error } = await sb.from('entries').update(payload).eq('id', id).select('*').single();
+    const { data, error } = await sb.from('entries').update(payload).eq('id', id).eq('user_id', user.id).select('*').maybeSingle();
     if (error) throw error;
+    if (!data) throw new Error('You can only edit your own entries');
     const saved = fromDbEntry(data);
     saved._c = calcUnits(saved);
     const idx = ENTRIES.findIndex(e => e.id === id);
@@ -242,8 +243,8 @@
   }
 
   async function deleteEntry(id) {
-    await requireUser();
-    const { error } = await sb.from('entries').delete().eq('id', id);
+    const user = await requireUser();
+    const { error } = await sb.from('entries').delete().eq('id', id).eq('user_id', user.id);
     if (error) throw error;
   }
 

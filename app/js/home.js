@@ -29,14 +29,17 @@ function renderHome() {
   const piecesShipped = sum(thisM.filter(e=>!(JOB_TYPES[e.jobType]&&JOB_TYPES[e.jobType].timeBased)), e => e.quantity);
   const clientsServed = new Set(thisM.map(e=>e.clientId)).size;
 
+  // my entries only (Home is a personal view)
+  const MY = myEntries();
+
   // logging streak (consecutive days up to & including today)
-  const dateSet = new Set(ENTRIES.map(e=>e.date));
+  const dateSet = new Set(MY.map(e=>e.date));
   let streak = 0; let cur = new Date(TODAY);
   while (dateSet.has(cur.toISOString().slice(0,10))) { streak++; cur.setDate(cur.getDate()-1); }
 
   // personal best day ever
   const dayTotals = {};
-  ENTRIES.forEach(e => { dayTotals[e.date] = (dayTotals[e.date]||0) + e._c.final; });
+  MY.forEach(e => { dayTotals[e.date] = (dayTotals[e.date]||0) + e._c.final; });
   const best = Object.entries(dayTotals).sort((a,b)=>b[1]-a[1])[0];
   const bestDate = best ? new Date(best[0]).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
 
@@ -44,12 +47,12 @@ function renderHome() {
   const scopeCount = thisM.filter(isScope).length;
 
   // starred
-  const starred = ENTRIES.filter(e=>e.isStarred);
+  const starred = MY.filter(e=>e.isStarred);
 
   // ---- week in review (last 7 days incl. today) ----
   const weekDates = [];
   for (let i=6;i>=0;i--){ const d=new Date(TODAY); d.setDate(d.getDate()-i); weekDates.push(d.toISOString().slice(0,10)); }
-  const weekEs = ENTRIES.filter(e=>weekDates.includes(e.date));
+  const weekEs = MY.filter(e=>weekDates.includes(e.date));
   const weekTotal = sum(weekEs, e=>e._c.final);
   const weekPieces = sum(weekEs, e=>e.quantity);
   const perDay = weekDates.map(d=>({ d, t: sum(weekEs.filter(e=>e.date===d), e=>e._c.final) }));

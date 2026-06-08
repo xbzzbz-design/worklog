@@ -12,17 +12,19 @@ function renderStats() {
   const thisTotal = sum(thisM, e=>e._c.final);
   const lastTotal = sum(lastM, e=>e._c.final);
 
+  // my entries only (My stats is a personal view)
+  const MY = myEntries();
   // all-time
-  const allTotal = sum(ENTRIES, e=>e._c.final);
+  const allTotal = sum(MY, e=>e._c.final);
   const piecesShipped = sum(thisM.filter(e=>!(JOB_TYPES[e.jobType]&&JOB_TYPES[e.jobType].timeBased)), e=>e.quantity);
-  const starred = ENTRIES.filter(e=>e.isStarred).length;
+  const starred = MY.filter(e=>e.isStarred).length;
 
   // streak + best day (reuse milestone metrics if present)
   const totals = {};
-  ENTRIES.forEach(e => { totals[e.date] = (totals[e.date]||0) + e._c.final; });
+  MY.forEach(e => { totals[e.date] = (totals[e.date]||0) + e._c.final; });
   const best = Object.entries(totals).sort((a,b)=>b[1]-a[1])[0];
   const bestDate = best ? new Date(best[0]).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
-  const dates = new Set(ENTRIES.map(e=>e.date));
+  const dates = new Set(MY.map(e=>e.date));
   let streak=0, cur=new Date(TODAY);
   while (dates.has(cur.toISOString().slice(0,10))) { streak++; cur.setDate(cur.getDate()-1); }
 

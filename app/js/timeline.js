@@ -6,6 +6,7 @@ let tl = { view: 'calendar', month: TODAY.slice(0, 7), clients: new Set(), types
 
 function tlFiltered() {
   return ENTRIES.filter(e => {
+    if (!isMine(e)) return false; // Timeline is my own record
     if (tl.clients.size && !tl.clients.has(e.clientId)) return false;
     if (tl.types.size && !tl.types.has(e.jobType)) return false;
     if (tl.flagged && !(e.isFlagged || isScope(e))) return false;

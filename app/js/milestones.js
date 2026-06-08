@@ -3,18 +3,19 @@
    ============================================================ */
 
 function milestoneMetrics() {
-  const pieces = sum(ENTRIES, e => e.quantity);
-  const starred = ENTRIES.filter(e => e.isStarred).length;
-  const mistakes = ENTRIES.filter(e => e.revisionCause === 'OUR_MISTAKE').length;
-  const scopes = ENTRIES.filter(isScope).length;
-  const entries = ENTRIES.length;
+  const MY = myEntries();
+  const pieces = sum(MY, e => e.quantity);
+  const starred = MY.filter(e => e.isStarred).length;
+  const mistakes = MY.filter(e => e.revisionCause === 'OUR_MISTAKE').length;
+  const scopes = MY.filter(isScope).length;
+  const entries = MY.length;
   // streak
-  const dates = new Set(ENTRIES.map(e => e.date));
+  const dates = new Set(MY.map(e => e.date));
   let streak = 0, cur = new Date(TODAY);
   while (dates.has(cur.toISOString().slice(0,10))) { streak++; cur.setDate(cur.getDate()-1); }
   // best day excluding today
   const totals = {};
-  ENTRIES.forEach(e => { totals[e.date] = (totals[e.date]||0) + e._c.final; });
+  MY.forEach(e => { totals[e.date] = (totals[e.date]||0) + e._c.final; });
   const todayTotal = totals[TODAY] || 0;
   const bestOther = Math.max(0, ...Object.entries(totals).filter(([d])=>d!==TODAY).map(([,v])=>v));
   return { pieces, starred, mistakes, scopes, entries, streak, todayTotal, bestOther };
