@@ -2,6 +2,11 @@
    WorkLog — Home / Dashboard
    ============================================================ */
 
+// "What's new" announcement — bump the id to re-show after future releases
+const WHATSNEW_ID = 'quicklog-daylog-2026-06';
+function whatsNewSeen() { try { return localStorage.getItem('wl_whatsnew') === WHATSNEW_ID; } catch (e) { return false; } }
+function dismissWhatsNew() { try { localStorage.setItem('wl_whatsnew', WHATSNEW_ID); } catch (e) {} rerenderScreen('home'); }
+
 function renderHome() {
   const todayEntries = entriesOn(TODAY);
   const todayTotal = dayTotal(TODAY);
@@ -82,6 +87,18 @@ function renderHome() {
       <div class="eyebrow">${greetWord}, ${SETTINGS.userName.split(' ')[0]}</div>
       <h1><em>${encourage}</em></h1>
     </div>
+
+    ${whatsNewSeen()?'':`<div class="whatsnew" id="whatsNew">
+      <div class="wn-top">
+        <span class="wn-tag">${ic('sparkles')} What's new</span>
+        <button class="wn-close" data-whatsnew-dismiss aria-label="Dismiss">${ic('x')}</button>
+      </div>
+      <div class="wn-items">
+        <div class="wn-item"><span class="wn-ic q">${ic('zap')}</span><div><b>Quick log</b><span>Tap the amber ${ic('zap')} button, jab in your units, and add the client & type later.</span></div></div>
+        <div class="wn-item"><span class="wn-ic c">${ic('calendar-days')}</span><div><b>Log any day</b><span>In Timeline, tap a past or future day to Log or Quick-log for that date.</span></div></div>
+      </div>
+      <button class="btn full wn-ok" data-whatsnew-dismiss>${ic('check')} Got it</button>
+    </div>`}
 
     ${todayTotal===0?`<div class="nudge" id="nudge">
       <div class="nudge-ic">${ic('moon-star')}</div>

@@ -161,3 +161,29 @@ body[data-mode="desktop"] .dm-grab { display: none; }
 .ds-add-btns .ds-quick { color: oklch(0.55 0.13 68); border-color: oklch(0.8 0.09 70); }
 .ds-add-btns .ds-quick:hover { background: var(--warn-soft); border-color: oklch(0.74 0.12 72); }
 .ds-add-btns .ds-quick svg { color: oklch(0.66 0.15 68); }
+
+/* ============================================================
+   "What's new" home banner (dismissible)
+   ============================================================ */
+.whatsnew {
+  margin-bottom: 16px; padding: 16px; border-radius: var(--r);
+  background: linear-gradient(135deg, var(--primary-tint), var(--card));
+  border: 1px solid var(--line); position: relative;
+}
+.wn-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.wn-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; color: var(--primary); }
+.wn-tag svg { width: 15px; height: 15px; }
+.wn-close { width: 28px; height: 28px; border-radius: 8px; border: none; background: transparent; color: var(--faint); cursor: pointer; display: grid; place-items: center; }
+.wn-close:hover { background: var(--paper-2); color: var(--ink); }
+.wn-close svg { width: 16px; height: 16px; }
+.wn-items { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+.wn-item { display: flex; gap: 11px; align-items: flex-start; }
+.wn-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex: none; }
+.wn-ic svg { width: 17px; height: 17px; }
+.wn-ic.q { background: var(--warn-soft); color: oklch(0.6 0.15 68); }
+.wn-ic.c { background: var(--primary-tint); color: var(--primary); }
+.wn-item b { display: block; font-size: 14px; font-weight: 700; margin-bottom: 1px; }
+.wn-item span { font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+.wn-item span svg { width: 13px; height: 13px; vertical-align: -2px; color: oklch(0.6 0.15 68); }
+.wn-ok { background: var(--primary); color: #fff; }
+.wn-ok:hover { background: var(--primary-600); }
