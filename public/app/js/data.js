@@ -17,6 +17,9 @@ const JOB_TYPES = {
   SINGLE_BANNER:  { label: 'Single Banner', short: 'Banner', rate: 1.0, color: 'var(--good)', icon: 'rectangle-horizontal' },
   INFOGRAPHIC:    { label: 'Infographic', short: 'Infographic', rate: 2.0, color: 'var(--bad)', icon: 'bar-chart-3' },
   OTHER:          { label: 'Meeting / Other', short: 'Meeting', rate: 1.0, color: 'oklch(0.55 0.05 60)', icon: 'users', timeBased: true },
+  // Quick log — a units-only placeholder logged in seconds; client / job type
+  // get filled in later. Never offered in the job-type picker (quick:true).
+  QUICK:          { label: 'Quick log', short: 'Quick log', rate: 1.0, color: 'oklch(0.62 0.03 280)', icon: 'zap', quick: true },
 };
 
 // kinds for the time-based "Meeting / Other" type
@@ -48,6 +51,11 @@ const CONDITIONS = {
 
 /* ---- THE FORMULA ---- */
 function calcUnits(e) {
+  // Quick log — the units the person tapped in ARE the value; no formula runs.
+  if (e.jobType === 'QUICK') {
+    const units = e.manualOverride != null ? e.manualOverride : (e.quantity || 0);
+    return { lines: [{ label: 'Quick log — details pending', val: units }], calculated: units, final: units, overridden: false, quick: true };
+  }
   const jt = JOB_TYPES[e.jobType];
   const rate = (CUSTOM_RATES && CUSTOM_RATES[e.jobType] != null) ? CUSTOM_RATES[e.jobType] : jt.rate;
 
@@ -180,6 +188,10 @@ ENTRIES.forEach(e => { e._c = calcUnits(e); });
    current user, so everything counts as "mine".) */
 const isMine = (e) => !window.WL_CURRENT_USER_ID || e.userId === window.WL_CURRENT_USER_ID;
 const myEntries = () => ENTRIES.filter(isMine);
+
+// quick-log entries still waiting for their client / job-type details
+const needsDetail = (e) => e.jobType === 'QUICK';
+const myQuickDrafts = () => myEntries().filter(needsDetail);
 
 /* ---- aggregation helpers (personal — scoped to me) ---- */
 function entriesOn(date) { return ENTRIES.filter(e => e.date === date && isMine(e)); }

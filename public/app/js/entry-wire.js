@@ -224,7 +224,8 @@ function wireEntry(root) {
     if (draft.manualOverride != null && !draft.manualOverrideReason.trim()) { toast('Override needs a reason', 'info'); $('#ovReason').focus(); return; }
 
     const eff = Object.assign({}, draft, { motionScenes: draft.motionOn ? draft.motionScenes : 0, flagNote: draft.flagNote });
-    eff.date = new Date().toISOString().slice(0, 10);
+    // keep the original date when editing / completing a backdated entry; otherwise today
+    eff.date = draft.date || new Date().toISOString().slice(0, 10);
     eff._c = calcUnits(eff);
     const btn = $('#saveBtn');
     btn.disabled = true;

@@ -129,12 +129,16 @@ function wireDelegation(mount) {
   mount.querySelectorAll('[data-go]').forEach(el => {
     el.addEventListener('click', () => go(el.dataset.go));
   });
+  mount.querySelectorAll('[data-quick-first]').forEach(el => {
+    el.addEventListener('click', () => openDetail(el.dataset.quickFirst));
+  });
 }
 
 /* ---- entry detail modal ---- */
 function openDetail(id) {
   const e = ENTRIES.find(x => x.id === id);
   if (!e) return;
+  if (needsDetail(e) && window.openQuickDetail) { openQuickDetail(e); return; }
   const c = e._c;
   const rows = [];
   rows.push(['Client', clientName(e.clientId)]);
@@ -207,6 +211,7 @@ function openDetail(id) {
   if (editBtn) editBtn.addEventListener('click', () => {
     if (detailBusy) return; detailBusy = true;
     draft = Object.assign(freshDraft(), {
+      date: e.date,
       clientId: e.clientId,
       jobType: e.jobType,
       otherKind: e.otherKind || 'MEETING',
@@ -439,6 +444,8 @@ async function init() {
     b.addEventListener('click', () => go(b.dataset.nav)));
   const mm = document.getElementById('mMenu');
   if (mm) mm.addEventListener('click', openMenu);
+  document.querySelectorAll('#qlFabM, #qlFabD').forEach(b =>
+    b.addEventListener('click', () => { if (window.openQuickLog) openQuickLog(); }));
   document.querySelectorAll('#mTheme, #dTheme').forEach(b => b.addEventListener('click', toggleTheme));
   initTheme();
   const dr = document.getElementById('dReplay');

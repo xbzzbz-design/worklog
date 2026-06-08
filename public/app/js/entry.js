@@ -98,7 +98,7 @@ function renderEntry() {
     <div class="fstep">
       <div class="fstep-h"><span class="num">2</span><label>Job type</label></div>
       <div class="jt-grid" id="jtGrid">
-        ${Object.entries(JOB_TYPES).map(([k,v])=>`
+        ${Object.entries(JOB_TYPES).filter(([k,v])=>!v.quick).map(([k,v])=>`
           <button class="jt-card ${draft.jobType===k?'on':''} ${k==='INFOGRAPHIC'?'row':''} ${v.timeBased?'tb':''}" data-jt="${k}">
             <span class="jt-ic" style="--jc:${v.color}">${ic(v.icon)}</span>
             <span class="jt-name">${v.label}</span>

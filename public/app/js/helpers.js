@@ -36,6 +36,19 @@ function newRevBadge(e) {
 function entryCard(e, opts={}) {
   const c = e._c || (e._c = calcUnits(e));
   const over = c.overridden;
+
+  // quick-log entries render as a compact "needs details" card
+  if (typeof needsDetail === 'function' && needsDetail(e)) {
+    return `<button class="entry quick-entry" data-entry="${e.id}">
+      <span class="av av-quick">${ic('zap')}</span>
+      <span class="body">
+        <span class="top"><span class="client">Quick log</span></span>
+        <span class="sub"><span class="badge-detail">${ic('circle-dashed')} Tap to add details</span></span>
+      </span>
+      <span class="units"><b class="tnum">${u(c.final)}</b><small>units</small></span>
+    </button>`;
+  }
+
   const flags = [];
   if (isScope(e)) flags.push(`<span style="color:var(--bad)">${ic('triangle-alert')}</span>`);
   if (e.isFlagged && !isScope(e)) flags.push(`<span style="color:var(--bad)">${ic('flag')}</span>`);

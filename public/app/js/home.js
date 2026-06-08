@@ -89,6 +89,12 @@ function renderHome() {
       <button class="nudge-btn" data-go="entry">${ic('plus')} Log</button>
     </div>`:''}
 
+    ${(()=>{ const qd = myQuickDrafts(); return qd.length?`<button class="quick-banner" data-quick-first="${qd[0].id}">
+      <span class="qb-ic">${ic('zap')}</span>
+      <span class="qb-body"><b>${qd.length} quick log${qd.length>1?'s':''} need${qd.length>1?'':'s'} details</b><span>Tap to add the client & job type</span></span>
+      ${ic('chevron-right')}
+    </button>`:''; })()}
+
     <!-- TODAY RING -->
     <div class="today ${over?'over':''}">
       <div class="ring">
