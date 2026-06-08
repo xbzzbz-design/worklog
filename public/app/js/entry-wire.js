@@ -335,9 +335,9 @@ function openCropper(file, onConfirm) {
     <div class="dm-overlay"></div>
     <div class="dm-sheet" style="max-width:420px">
       <div class="dm-grab"></div>
-      <div class="ask-head">${ic('crop')}<div><b>Crop to square</b><small>Drag to reposition · slide to zoom</small></div></div>
-      <div class="crop-stage" id="cropStage"><img id="cropImg" src="${url}" alt="" draggable="false"></div>
-      <div class="crop-zoom-row">${ic('zoom-out')}<input type="range" id="cropZoom" min="1" max="3" step="0.01" value="1">${ic('zoom-in')}</div>
+      <div class="ask-head">${ic('crop')}<div><b>Crop to square</b><small>Drag to move · pinch or slide to zoom</small></div></div>
+      <canvas class="crop-canvas" id="cropCanvas"></canvas>
+      <div class="crop-zoom-row">${ic('zoom-out')}<input type="range" id="cropZoom" min="1" max="4" step="0.01" value="1">${ic('zoom-in')}</div>
       <div class="dm-actions">
         <button class="btn ghost" id="cropCancel">Cancel</button>
         <button class="btn" id="cropOk">${ic('check')} Use photo</button>
@@ -346,64 +346,75 @@ function openCropper(file, onConfirm) {
   el.classList.add('open');
   refreshIcons();
 
-  const stage = el.querySelector('#cropStage');
-  const img = el.querySelector('#cropImg');
+  // Canvas-based: the canvas clips by itself (no overflow) and touch-action:none
+  // keeps pinch/drag on the image instead of zooming the whole page.
+  const canvas = el.querySelector('#cropCanvas');
   const zoom = el.querySelector('#cropZoom');
-  let natW = 0, natH = 0, base = 1, scale = 1, x = 0, y = 0, S = 0;
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  let natW = 0, natH = 0, base = 1, scale = 1, ox = 0, oy = 0, CS = 0;
+  const MAXZ = 4;
 
   const clamp = () => {
-    const dispW = natW * scale, dispH = natH * scale;
-    x = Math.min(0, Math.max(S - dispW, x));
-    y = Math.min(0, Math.max(S - dispH, y));
+    const w = natW * scale, h = natH * scale;
+    ox = Math.min(0, Math.max(CS - w, ox));
+    oy = Math.min(0, Math.max(CS - h, oy));
   };
-  const apply = () => {
-    img.style.width = (natW * scale) + 'px';
-    img.style.height = (natH * scale) + 'px';
-    img.style.left = x + 'px';
-    img.style.top = y + 'px';
-  };
-  const setZoom = (z) => {
-    const cx = S / 2, cy = S / 2;
-    const wx = (cx - x) / scale, wy = (cy - y) / scale; // world point at stage center
+  const draw = () => { if (!CS) return; ctx.clearRect(0,0,CS,CS); ctx.drawImage(img, ox, oy, natW*scale, natH*scale); };
+  const setZoom = (z, cx, cy) => {
+    z = Math.max(1, Math.min(MAXZ, z));
+    cx = cx==null ? CS/2 : cx; cy = cy==null ? CS/2 : cy;
+    const wx = (cx-ox)/scale, wy = (cy-oy)/scale;
     scale = base * z;
-    x = cx - wx * scale; y = cy - wy * scale;
-    clamp(); apply();
+    ox = cx - wx*scale; oy = cy - wy*scale;
+    clamp(); draw();
+    if (zoom.value != z) zoom.value = z;
   };
 
-  const init = () => {
+  img.onload = () => requestAnimationFrame(() => {
+    CS = Math.round(canvas.clientWidth) || 300;
+    canvas.width = CS; canvas.height = CS;
     natW = img.naturalWidth; natH = img.naturalHeight;
     if (!natW || !natH) return;
-    S = stage.clientWidth || 300;
-    base = S / Math.min(natW, natH); // cover
-    scale = base; x = (S - natW * scale) / 2; y = (S - natH * scale) / 2;
-    clamp(); apply();
-  };
-  img.onload = init;
-  if (img.complete && img.naturalWidth) init();
+    base = CS / Math.min(natW, natH); // cover the square
+    scale = base; ox = (CS - natW*scale)/2; oy = (CS - natH*scale)/2;
+    clamp(); draw();
+  });
+  img.src = url;
 
-  // drag to pan (pointer events cover mouse + touch)
-  let dragging = false, px = 0, py = 0;
-  stage.addEventListener('pointerdown', (e) => { dragging = true; px = e.clientX; py = e.clientY; stage.setPointerCapture(e.pointerId); });
-  stage.addEventListener('pointermove', (e) => { if (!dragging) return; x += e.clientX - px; y += e.clientY - py; px = e.clientX; py = e.clientY; clamp(); apply(); });
-  stage.addEventListener('pointerup', () => { dragging = false; });
-  stage.addEventListener('pointercancel', () => { dragging = false; });
+  // pointer gestures (1 finger = pan, 2 fingers = pinch zoom)
+  const pts = new Map();
+  let lastDist = 0;
+  const local = (e) => { const r = canvas.getBoundingClientRect(); const k = CS / (r.width||1); return { x:(e.clientX-r.left)*k, y:(e.clientY-r.top)*k }; };
+  canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); canvas.setPointerCapture(e.pointerId); pts.set(e.pointerId, local(e)); lastDist = 0; });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!pts.has(e.pointerId)) return;
+    e.preventDefault();
+    const prev = pts.get(e.pointerId);
+    const cur = local(e);
+    pts.set(e.pointerId, cur);
+    if (pts.size === 1) { ox += cur.x - prev.x; oy += cur.y - prev.y; clamp(); draw(); }
+    else if (pts.size >= 2) {
+      const a = [...pts.values()];
+      const dist = Math.hypot(a[0].x-a[1].x, a[0].y-a[1].y);
+      const mid = { x:(a[0].x+a[1].x)/2, y:(a[0].y+a[1].y)/2 };
+      if (lastDist) setZoom((scale*(dist/lastDist))/base, mid.x, mid.y);
+      lastDist = dist;
+    }
+  });
+  const up = (e) => { pts.delete(e.pointerId); lastDist = 0; };
+  canvas.addEventListener('pointerup', up);
+  canvas.addEventListener('pointercancel', up);
   zoom.addEventListener('input', () => setZoom(parseFloat(zoom.value)));
 
   const close = () => { el.remove(); URL.revokeObjectURL(url); };
   el.querySelector('.dm-overlay').addEventListener('click', close);
   el.querySelector('#cropCancel').addEventListener('click', close);
-  el.querySelector('#cropOk').addEventListener('click', (ev) => {
-    const out = 600;
-    const canvas = document.createElement('canvas');
-    canvas.width = out; canvas.height = out;
-    const ctx = canvas.getContext('2d');
-    const sx = -x / scale, sy = -y / scale, sSize = S / scale;
-    ctx.drawImage(img, sx, sy, sSize, sSize, 0, 0, out, out);
-    canvas.toBlob((blob) => {
-      const previewUrl = canvas.toDataURL('image/jpeg', 0.85);
-      close();
-      if (blob) onConfirm(blob, previewUrl);
-    }, 'image/jpeg', 0.9);
+  el.querySelector('#cropOk').addEventListener('click', () => {
+    const out = 600, k = out / (CS||out);
+    const o = document.createElement('canvas'); o.width = out; o.height = out;
+    o.getContext('2d').drawImage(img, ox*k, oy*k, natW*scale*k, natH*scale*k);
+    o.toBlob((blob) => { const previewUrl = o.toDataURL('image/jpeg', 0.85); close(); if (blob) onConfirm(blob, previewUrl); }, 'image/jpeg', 0.9);
   });
 }
 
