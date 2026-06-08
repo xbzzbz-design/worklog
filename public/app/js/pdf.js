@@ -132,7 +132,7 @@ function openPdfPreview() {
           <div class="evid-meta">
             <b>${escHtml(clientName(e.clientId))}</b>
             <span>${fmtDate(e.date)} · ${(JOB_TYPES[e.jobType]||{short:e.jobType}).short}</span>
-            ${e.driveLink ? `<span class="evid-drive">Google Drive link attached</span>` : ''}
+            ${e.driveLink ? `<a class="evid-drive" href="${escHtml(e.driveLink)}">Open Google Drive &#8599;</a>` : ''}
           </div>
         </div>`).join('') : `<div class="evid-empty">No evidence attached this period</div>`}
     </div>

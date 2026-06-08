@@ -211,7 +211,7 @@ function openDetail(id) {
         </div>`).join('')}
         <div class="dm-tr-sum">Thread total <b class="tnum">${u(sum(threadOf(e), t=>t._c.final))}</b> units across ${threadOf(e).length} jobs</div>
       </div>`:''}
-      ${e.snap||e.driveLink?`<div class="dm-evid">${e.snap?(e.snap.startsWith('http')||e.snap.startsWith('/')?`<div class="dm-ev-img"><img src="${e.snap}" style="width:100%;border-radius:10px;max-height:200px;object-fit:cover;display:block"></div>`:`<div class="dm-ev"><span class="dm-ev-th">▦</span> ${e.snap}</div>`):''}${e.driveLink?`<div class="dm-ev"><span class="dm-ev-th">${ic('link')}</span> Drive link attached</div>`:''}</div>`:''}
+      ${e.snap||e.driveLink?`<div class="dm-evid">${e.snap?(e.snap.startsWith('http')||e.snap.startsWith('/')?`<div class="dm-ev-img"><img src="${e.snap}" style="width:100%;border-radius:10px;max-height:200px;object-fit:cover;display:block"></div>`:`<div class="dm-ev"><span class="dm-ev-th">▦</span> ${e.snap}</div>`):''}${e.driveLink?`<a class="dm-ev dm-ev-link" href="${escHtml(e.driveLink)}" target="_blank" rel="noopener"><span class="dm-ev-th">${ic('link')}</span> Open Drive link <span class="dm-ev-arrow">${ic('external-link')}</span></a>`:''}</div>`:''}
       ${isMine(e)
         ? `<div class="dm-actions">
             <button class="btn ghost" id="dmEdit">${ic('pencil')} Edit</button>
