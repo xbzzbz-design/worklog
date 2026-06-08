@@ -11,19 +11,22 @@ function qlClamp(n) {
   return Math.round(n * 100) / 100;
 }
 
+// parse 'YYYY-MM-DD' as a UTC date (timezone-safe — avoids the off-by-one that
+// local-time parsing + toISOString() causes in zones like UTC+7)
+function qlParse(iso) { const [y, m, d] = iso.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)); }
+
 // label a date relative to today (Today / Yesterday / Tomorrow / weekday)
 function qlDateLabel(iso) {
   const today = new Date().toISOString().slice(0, 10);
   if (iso === today) return 'Today';
-  const d = new Date(iso + 'T00:00:00');
-  const diff = Math.round((d - new Date(today + 'T00:00:00')) / 86400000);
+  const diff = Math.round((qlParse(iso) - qlParse(today)) / 86400000);
   if (diff === -1) return 'Yesterday';
   if (diff === 1) return 'Tomorrow';
-  return d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+  return qlParse(iso).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 }
 function qlShiftDate(iso, days) {
-  const d = new Date(iso + 'T00:00:00');
-  d.setDate(d.getDate() + days);
+  const d = qlParse(iso);
+  d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
 
@@ -79,7 +82,8 @@ function qlMarkup() {
 function qlSyncUI(el) {
   const s = _qlState;
   const n = el.querySelector('#qlNum');
-  if (document.activeElement !== n) n.value = s.units ? u(s.units) : '';
+  // show "0" (not blank) when empty so the field never looks like it vanished
+  if (document.activeElement !== n) n.value = s.units ? u(s.units) : '0';
   el.querySelector('#qlDayLab').textContent = qlDateLabel(s.date);
   el.querySelector('#qlSaveN').textContent = u(s.units);
   const ok = s.units > 0 && !s.busy;
@@ -106,6 +110,8 @@ function qlWire(el) {
 
   el.querySelector('#qlSave').addEventListener('click', () => qlCommit(el, false));
   el.querySelector('#qlDetails').addEventListener('click', () => qlCommit(el, true));
+
+  qlSyncUI(el); // normalise the opening state (number shows 0, buttons disabled)
 }
 
 async function qlCommit(el, thenDetails) {
