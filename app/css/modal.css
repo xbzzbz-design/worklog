@@ -61,23 +61,24 @@ body[data-mode="desktop"] .dm-grab { display: none; }
 /* ============================================================
    Quick Log — FAB + units stepper sheet
    ============================================================ */
-/* floating action button */
+/* floating action button — deliberately small + amber so it reads apart
+   from the larger purple "New" button in the nav */
 .phone .app { position: relative; }
 .ql-fab {
   position: absolute; z-index: 40; border: none; cursor: pointer;
-  background: var(--primary); color: #fff;
-  box-shadow: 0 8px 24px oklch(0.45 0.12 278 / 0.4);
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  transition: transform .15s, box-shadow .15s;
+  background: oklch(0.66 0.15 68); color: #fff;
+  box-shadow: 0 5px 16px oklch(0.66 0.15 68 / 0.4);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-weight: 700; transition: transform .15s, box-shadow .15s, filter .15s;
 }
-.ql-fab:hover { transform: translateY(-2px); box-shadow: 0 12px 30px oklch(0.45 0.12 278 / 0.5); }
-.ql-fab:active { transform: scale(0.94); }
-.ql-fab svg { width: 22px; height: 22px; }
-/* mobile: round, above the bottom nav */
-.phone .ql-fab { right: 16px; bottom: 86px; width: 54px; height: 54px; border-radius: 18px; }
-/* desktop: labelled pill, bottom-right of the window */
-.desktop .ql-fab { right: 26px; bottom: 26px; height: 50px; padding: 0 22px; border-radius: 16px; font-size: 15px; font-weight: 700; }
-.desktop .ql-fab svg { width: 19px; height: 19px; }
+.ql-fab:hover { filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 8px 20px oklch(0.66 0.15 68 / 0.5); }
+.ql-fab:active { transform: scale(0.92); }
+.ql-fab svg { width: 17px; height: 17px; }
+/* mobile: small round chip, above the bottom nav */
+.phone .ql-fab { right: 14px; bottom: 84px; width: 42px; height: 42px; border-radius: 13px; }
+/* desktop: compact labelled pill, bottom-right of the window */
+.desktop .ql-fab { right: 22px; bottom: 22px; height: 40px; padding: 0 15px; border-radius: 13px; font-size: 13px; }
+.desktop .ql-fab svg { width: 16px; height: 16px; }
 
 #quickLogSheet { position: absolute; inset: 0; z-index: 260; display: none; }
 #quickLogSheet.open { display: block; }
