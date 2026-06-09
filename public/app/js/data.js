@@ -408,7 +408,7 @@ function teamPulse(days) {
 // map a utilisation ratio to a load state — colour + agency-humour label + plain subtitle
 function loadStatus(util) {
   if (util > 1.0)   return { key: 'red',    tone: 'over', label: 'Heavy week',  sub: 'over a sustainable load' };
-  if (util >= 0.85) return { key: 'yellow', tone: 'warn', label: 'Send snacks', sub: 'filling up' };
+  if (util >= 0.75) return { key: 'yellow', tone: 'warn', label: 'Send snacks', sub: 'filling up' };
   return { key: 'green', tone: 'good', label: 'Healthy', sub: 'within a healthy load' };
 }
 
