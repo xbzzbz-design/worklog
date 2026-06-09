@@ -14,6 +14,7 @@ const SCREENS = {
   clients:      { render: renderClients,      wire: wireClients,       label: 'Clients' },
   clientDetail: { render: renderClientDetail, wire: wireClientDetail,  label: 'Client' },
   settings:     { render: renderSettings,     wire: wireSettings,      label: 'Settings' },
+  changelog:    { render: renderChangelog,    wire: wireChangelog,     label: "What's new" },
 };
 
 let currentScreen = 'home';
@@ -121,12 +122,23 @@ function updateHelpBadge() {
   });
 }
 
+// red dot on the menu / What's-new entry points until updates are read
+function updateChangelogDot() {
+  const show = (typeof changesSeen === 'function') ? !changesSeen() : false;
+  document.querySelectorAll('#mMenu, #dNav [data-nav="changelog"], #menuSheet [data-go="changelog"]').forEach(el => {
+    let d = el.querySelector('.nav-dot');
+    if (show) { if (!d) { d = document.createElement('span'); d.className = 'nav-dot'; el.appendChild(d); } }
+    else if (d) { d.remove(); }
+  });
+}
+
 function updateNav(name) {
   const navKey = name === 'clientDetail' ? 'clients' : name;
   document.querySelectorAll('#mNav button, #dNav button').forEach(b => {
     b.classList.toggle('on', b.dataset.nav === navKey);
   });
   updateHelpBadge();
+  updateChangelogDot();
   // desktop url bar
   const url = document.querySelector('.winbar .url');
   if (url) url.innerHTML = `<i data-lucide="lock"></i> worklog.app/${name==='entry'?'new':name}`;
@@ -164,8 +176,8 @@ function wireDelegation(mount) {
   mount.querySelectorAll('[data-quick-first]').forEach(el => {
     el.addEventListener('click', () => openDetail(el.dataset.quickFirst));
   });
-  mount.querySelectorAll('[data-whatsnew-dismiss]').forEach(el => {
-    el.addEventListener('click', () => dismissWhatsNew());
+  mount.querySelectorAll('[data-changes-seen]').forEach(el => {
+    el.addEventListener('click', () => { markChangesSeen(); rerenderScreen('home'); });
   });
 }
 
@@ -341,6 +353,7 @@ function openMenu() {
     ['clients', 'contact', 'Clients', 'Difficulty & history'],
     ['settings', 'settings', 'Settings', 'Rates, capacity, team'],
     ['help', 'circle-help', 'Help', 'How the math works'],
+    ['changelog', 'sparkles', "What's new", 'Latest updates & fixes'],
   ];
   el.innerHTML = `
     <div class="ms-overlay"></div>
@@ -362,6 +375,7 @@ function openMenu() {
   el.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{ closeMenu(); go(b.dataset.go); }));
   el.querySelector('#msReplay').addEventListener('click', ()=>{ closeMenu(); openOnboarding(); });
   el.querySelector('#msInstall').addEventListener('click', requestInstall);
+  updateChangelogDot();
 }
 function closeMenu() { const el=document.getElementById('menuSheet'); if(el) el.classList.remove('open'); }
 

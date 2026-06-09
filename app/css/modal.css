@@ -191,3 +191,20 @@ body[data-mode="desktop"] .dm-grab { display: none; }
 .wn-item span svg { width: 13px; height: 13px; vertical-align: -2px; color: oklch(0.6 0.15 68); }
 .wn-ok { background: var(--primary); color: #fff; }
 .wn-ok:hover { background: var(--primary-600); }
+
+/* What's-new changelog page + home banner list */
+.cl-entry { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--sh-1); padding: 16px 18px; margin-bottom: 12px; }
+.cl-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.cl-head b { font-size: 15px; font-weight: 800; }
+.cl-date { font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.cl-date svg { width: 11px; height: 11px; color: var(--bad); }
+.cl-list { display: flex; flex-direction: column; gap: 8px; }
+.cl-list li { display: flex; gap: 8px; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+.cl-list li svg { width: 14px; height: 14px; color: var(--good); flex: none; margin-top: 2px; }
+
+.wn-title { font-size: 15px; font-weight: 800; margin-bottom: 10px; }
+.wn-list { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+.wn-list li { display: flex; gap: 8px; font-size: 13px; line-height: 1.4; color: var(--ink-2); }
+.wn-list li svg { width: 13px; height: 13px; color: var(--good); flex: none; margin-top: 2px; }
+.wn-actions { display: flex; gap: 10px; }
+.wn-actions .btn { flex: 1; }

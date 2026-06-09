@@ -369,3 +369,10 @@ body[data-theme="dark"] .botnav { background: oklch(0.235 0.013 66 / 0.85); }
   display: grid; place-items: center; line-height: 1; box-shadow: 0 0 0 2px var(--card);
 }
 #dNav button .nav-badge { top: 50%; transform: translateY(-50%); right: 12px; }
+
+/* unread "What's new" dot on the menu / sidebar entry points */
+#mMenu { position: relative; }
+.nav-dot { position: absolute; top: 6px; right: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--bad); box-shadow: 0 0 0 2px var(--card); }
+#dNav button .nav-dot { top: 50%; transform: translateY(-50%); right: 12px; }
+#menuSheet .ms-item { position: relative; }
+#menuSheet .ms-item .nav-dot { top: 50%; transform: translateY(-50%); right: 38px; }
