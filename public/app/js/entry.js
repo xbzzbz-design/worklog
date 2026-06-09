@@ -7,7 +7,7 @@ function freshDraft() {
   return {
     clientId: null, jobType: null, quantity: 1,
     isRevision: false, revisionRound: 1, revisionSeverity: 'STANDARD', revisionCause: null,
-    motionOn: false, motionSimple: 0, motionStandard: 0, motionCustom: 0, motionCustomReason: '',
+    motionSimple: 0, motionStandard: 0, motionCustom: 0, motionCustomReason: '',
     conditionBriefIncomplete: false, conditionAssetNotProvided: false, conditionDeadlineRush: false,
     manualOverride: null, manualOverrideReason: '',
     note: '', driveLink: '', snap: null,
@@ -18,22 +18,26 @@ function freshDraft() {
 
 // is the currently-selected job a time-based (meeting/other) type?
 function isTimeBased() { return draft.jobType && JOB_TYPES[draft.jobType] && JOB_TYPES[draft.jobType].timeBased; }
+// is the currently-selected job the Motion type?
+function isMotion() { return draft.jobType && JOB_TYPES[draft.jobType] && JOB_TYPES[draft.jobType].motion; }
 
 function draftCalc() {
   const eff = Object.assign({}, draft);
-  if (!draft.motionOn) { eff.motionSimple = 0; eff.motionStandard = 0; eff.motionCustom = 0; }
+  if (eff.jobType !== 'MOTION') { eff.motionSimple = 0; eff.motionStandard = 0; eff.motionCustom = 0; }
   if (isTimeBased()) eff.hours = draft.hours;
   return calcUnits(eff);
 }
 
-// toggle the form between piece-based and time-based modes
+// toggle the form between piece-based, time-based and motion modes
 function syncJobMode(root) {
   root = root || document;
   const tb = isTimeBased();
+  const mo = isMotion();
   const show = (id, on) => { const el = root.querySelector(id); if (el) el.hidden = !on; };
   show('#otherKind', tb);
-  show('#revStep', !tb);
-  show('#motionStep', !tb);
+  show('#qtyStep', !tb && !mo);   // motion uses tiered scenes instead of a quantity
+  show('#motionStep', mo);        // motion tier builder
+  show('#revStep', !tb);          // revision/edit applies to piece + motion (not meetings)
   show('#honestyNote', tb);
   const qtyLabel = root.querySelector('#qtyLabel');
   const qtyUnit = root.querySelector('#qtyUnit');
@@ -47,8 +51,8 @@ function syncJobMode(root) {
 const DRAFT_KEY = 'wl_draft';
 function isDraftDirty(d) {
   return !!(d && (d.clientId || d.jobType || d.note || d.driveLink || d.snap || d.isFlagged ||
-    d.isStarred || d.isRevision || d.motionOn || d.conditionBriefIncomplete ||
-    d.conditionAssetNotProvided || d.conditionDeadlineRush || (d.quantity||1) > 1 || d.manualOverride != null));
+    d.isStarred || d.isRevision || (d.motionSimple||0)>0 || (d.motionStandard||0)>0 || (d.motionCustom||0)>0 ||
+    d.conditionBriefIncomplete || d.conditionAssetNotProvided || d.conditionDeadlineRush || (d.quantity||1) > 1 || d.manualOverride != null));
 }
 function saveDraft() {
   try {
@@ -103,7 +107,7 @@ function renderEntry() {
           <button class="jt-card ${draft.jobType===k?'on':''} ${k==='INFOGRAPHIC'?'row':''} ${v.timeBased?'tb':''}" data-jt="${k}">
             <span class="jt-ic" style="--jc:${v.color}">${ic(v.icon)}</span>
             <span class="jt-name">${v.label}</span>
-            <span class="jt-rate tnum">${u(v.rate)}<small>/${v.timeBased?'hr':'pc'}</small></span>
+            ${v.motion ? `<span class="jt-rate">tiered</span>` : `<span class="jt-rate tnum">${u(v.rate)}<small>/${v.timeBased?'hr':'pc'}</small></span>`}
           </button>`).join('')}
       </div>
     </div>
@@ -157,14 +161,10 @@ function renderEntry() {
       </div>
     </div>
 
-    <!-- STEP 5 MOTION -->
+    <!-- STEP 3 (MOTION) SCENES BY TIER -->
     <div class="fstep" id="motionStep">
-      <div class="fstep-h"><span class="num">5</span><label>Motion add-on</label><span class="opt-tag">optional</span></div>
-      <div class="bigtoggle" id="motionToggle">
-        <button class="bt ${!draft.motionOn?'on':''}" data-m="0">No motion</button>
-        <button class="bt ${draft.motionOn?'on':''}" data-m="1">${ic('clapperboard')} Has motion</button>
-      </div>
-      <div id="motionDetail" ${draft.motionOn?'':'hidden'}>
+      <div class="fstep-h"><span class="num">3</span><label>Motion scenes</label><span class="opt-tag">by complexity</span></div>
+      <div id="motionDetail">
         <div class="mtier" data-mt="simple">
           <div class="mtier-info"><b>Simple <span class="mtier-rate">+${u(MOTION_RATES.simple)}/scene</span></b><small>Still image with simple text motion</small></div>
           <div class="mtier-step"><button class="step-btn" data-mt="simple" data-s="-1">${ic('minus')}</button><b class="tnum" id="mSimpleVal">${draft.motionSimple||0}</b><button class="step-btn" data-mt="simple" data-s="1">${ic('plus')}</button></div>
@@ -174,13 +174,13 @@ function renderEntry() {
           <div class="mtier-step"><button class="step-btn" data-mt="standard" data-s="-1">${ic('minus')}</button><b class="tnum" id="mStandardVal">${draft.motionStandard||0}</b><button class="step-btn" data-mt="standard" data-s="1">${ic('plus')}</button></div>
         </div>
         <div class="mtier custom">
-          <div class="mtier-info"><b>Complex <span class="mtier-rate">custom</span></b><small>Beyond simple &amp; standard — you set the units</small></div>
+          <div class="mtier-info"><b>Complex <span class="mtier-rate">custom</span></b><small>Heavier than the above — e.g. an animated infographic, a long clip cut with self-generated audio. You set the units.</small></div>
           <input type="number" step="0.5" min="0" id="mCustomVal" class="mtier-custom" placeholder="0" value="${draft.motionCustom||''}">
         </div>
         <div class="mtier-reason" id="mReasonWrap" ${(draft.motionCustom>0)?'':'hidden'}>
           <input type="text" id="mCustomReason" placeholder="What makes it complex? (required)" value="${escHtml(draft.motionCustomReason||'')}">
         </div>
-        <div class="scene-add">+<span id="motionTotal">${u(motionUnitsOf(draft))}</span> units</div>
+        <div class="scene-add">+<span id="motionTotal">${u(motionUnitsOf(draft))}</span> units${draft.isRevision?' · before revision discount':''}</div>
       </div>
     </div>
 

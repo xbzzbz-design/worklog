@@ -16,6 +16,7 @@ const JOB_TYPES = {
   ADAPTATION:     { label: 'Adaptation', short: 'Adaptation', rate: 0.5, color: 'oklch(0.5 0.12 230)', icon: 'maximize-2' },
   SINGLE_BANNER:  { label: 'Single Banner', short: 'Banner', rate: 1.0, color: 'var(--good)', icon: 'rectangle-horizontal' },
   INFOGRAPHIC:    { label: 'Infographic', short: 'Infographic', rate: 2.0, color: 'var(--bad)', icon: 'bar-chart-3' },
+  MOTION:         { label: 'Motion', short: 'Motion', rate: 0, color: 'oklch(0.55 0.17 305)', icon: 'clapperboard', motion: true },
   OTHER:          { label: 'Meeting / Other', short: 'Meeting', rate: 1.0, color: 'oklch(0.55 0.05 60)', icon: 'users', timeBased: true },
   // Quick log — a units-only placeholder logged in seconds; client / job type
   // get filled in later. Never offered in the job-type picker (quick:true).
@@ -84,6 +85,34 @@ function calcUnits(e) {
     const baseUnits = rate * hours;
     const lines = [{ label: `${kind.label} · ${hours}h`, val: baseUnits }];
     const calculated = baseUnits;
+    const final = (e.manualOverride != null) ? e.manualOverride : calculated;
+    return { lines, calculated, final, overridden: e.manualOverride != null };
+  }
+
+  // Motion — its own job type. Units come from tiered scenes (Simple/Standard
+  // per scene, Complex = custom). A revision/edit applies the revision severity
+  // to the Simple/Standard scenes; the custom (Complex) value is taken as-is
+  // since a motion edit can swing from a whole-video redo to a few text tweaks.
+  if (jt.motion) {
+    const lines = [];
+    const ms = e.motionSimple || 0, mt = e.motionStandard || 0, mc = e.motionCustom || 0;
+    let baseUnits = 0;
+    if (e.isRevision && e.revisionCause === 'OUR_MISTAKE') {
+      lines.push({ label: 'Motion revision (our mistake)', val: 0, muted: true });
+    } else {
+      const sev = e.isRevision ? (SEVERITY[e.revisionSeverity] || SEVERITY.STANDARD) : null;
+      const factor = sev ? (sev.factor != null ? sev.factor : 1.0) : 1.0;
+      const pfx = sev ? `${sev.label} ` : '';
+      if (ms > 0) { const v = ms * MOTION_RATES.simple * factor; baseUnits += v; lines.push({ label: `${pfx}Motion · ${ms} simple`, val: v }); }
+      if (mt > 0) { const v = mt * MOTION_RATES.standard * factor; baseUnits += v; lines.push({ label: `${pfx}Motion · ${mt} standard`, val: v }); }
+      if (mc > 0) { baseUnits += mc; lines.push({ label: `Motion · complex (custom)`, val: mc }); } // custom = net, no factor
+    }
+    const aoM = SETTINGS.addOn; let addOnM = 0; const aoLabM = [];
+    if (e.conditionBriefIncomplete) { addOnM += aoM; aoLabM.push('Brief'); }
+    if (e.conditionAssetNotProvided) { addOnM += aoM; aoLabM.push('Assets'); }
+    if (e.conditionDeadlineRush) { addOnM += aoM; aoLabM.push('Rush'); }
+    if (addOnM > 0) lines.push({ label: `Add-ons · ${aoLabM.join(', ')}`, val: addOnM });
+    const calculated = baseUnits + addOnM;
     const final = (e.manualOverride != null) ? e.manualOverride : calculated;
     return { lines, calculated, final, overridden: e.manualOverride != null };
   }

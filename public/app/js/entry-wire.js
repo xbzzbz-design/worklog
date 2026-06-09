@@ -102,19 +102,12 @@ function wireEntry(root) {
     updateSummary();
   }));
 
-  /* --- STEP 5 motion --- */
-  $$('#motionToggle .bt').forEach(b => b.addEventListener('click', () => {
-    $$('#motionToggle .bt').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');
-    draft.motionOn = b.dataset.m === '1';
-    $('#motionDetail').hidden = !draft.motionOn;
-    updateSummary();
-  }));
+  /* --- MOTION scenes (only shown when the Motion job type is selected) --- */
   const syncMotion = () => {
     const sv = $('#mSimpleVal'); if (sv) sv.textContent = draft.motionSimple || 0;
     const tv = $('#mStandardVal'); if (tv) tv.textContent = draft.motionStandard || 0;
     const rw = $('#mReasonWrap'); if (rw) rw.hidden = !((draft.motionCustom || 0) > 0);
-    const mt = $('#motionTotal'); if (mt) mt.textContent = u(draft.motionOn ? motionUnitsOf(draft) : 0);
+    const mt = $('#motionTotal'); if (mt) mt.textContent = u(motionUnitsOf(draft));
     updateSummary();
   };
   $$('.mtier-step .step-btn').forEach(b => b.addEventListener('click', () => {
@@ -249,10 +242,11 @@ function wireEntry(root) {
     if (!draft.jobType) { toast('Pick a job type', 'info'); return; }
     if (draft.isRevision && !draft.revisionCause) { toast('Choose a revision cause', 'info'); return; }
     if (draft.manualOverride != null && !draft.manualOverrideReason.trim()) { toast('Override needs a reason', 'info'); $('#ovReason').focus(); return; }
-    if (draft.motionOn && (draft.motionCustom||0) > 0 && !(draft.motionCustomReason||'').trim()) { toast('Complex motion needs a reason', 'info'); const r=$('#mCustomReason'); if (r) r.focus(); return; }
+    if (draft.jobType === 'MOTION' && motionUnitsOf(draft) <= 0) { toast('Add at least one motion scene', 'info'); return; }
+    if (draft.jobType === 'MOTION' && (draft.motionCustom||0) > 0 && !(draft.motionCustomReason||'').trim()) { toast('Complex motion needs a reason', 'info'); const r=$('#mCustomReason'); if (r) r.focus(); return; }
 
     const eff = Object.assign({}, draft, { flagNote: draft.flagNote });
-    if (!draft.motionOn) { eff.motionSimple = 0; eff.motionStandard = 0; eff.motionCustom = 0; eff.motionCustomReason = ''; }
+    if (eff.jobType !== 'MOTION') { eff.motionSimple = 0; eff.motionStandard = 0; eff.motionCustom = 0; eff.motionCustomReason = ''; }
     // keep the original date when editing / completing a backdated entry; otherwise today
     eff.date = draft.date || new Date().toISOString().slice(0, 10);
     eff._c = calcUnits(eff);
