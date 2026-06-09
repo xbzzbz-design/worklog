@@ -186,7 +186,7 @@ function renderEntry() {
 
     <!-- STEP 6 CONDITIONS -->
     <div class="fstep">
-      <div class="fstep-h"><span class="num">6</span><label>Conditions</label><span class="opt-tag">+${u(SETTINGS.addOn)} each</span></div>
+      <div class="fstep-h"><span class="num">5</span><label>Conditions</label><span class="opt-tag">+${u(SETTINGS.addOn)} each</span></div>
       <div class="checks" id="condChecks">
         ${Object.entries(CONDITIONS).map(([k,label])=>`
           <button class="check ${draft[k]?'on':''}" data-cond="${k}">
@@ -199,7 +199,7 @@ function renderEntry() {
 
     <!-- STEP 7 SUMMARY -->
     <div class="fstep">
-      <div class="fstep-h"><span class="num">7</span><label>Workload summary</label></div>
+      <div class="fstep-h"><span class="num">6</span><label>Workload summary</label></div>
       <div class="summary-card" id="summaryCard">
         <div class="sum-lines" id="sumLines"></div>
         <div class="sum-total">
@@ -220,13 +220,13 @@ function renderEntry() {
 
     <!-- STEP 8 NOTE -->
     <div class="fstep">
-      <div class="fstep-h"><span class="num">8</span><label>Note</label><span class="opt-tag">optional</span></div>
+      <div class="fstep-h"><span class="num">7</span><label>Note</label><span class="opt-tag">optional</span></div>
       <textarea id="noteField" class="ta" placeholder="Anything worth remembering about this job…" rows="2">${draft.note||''}</textarea>
     </div>
 
     <!-- STEP 9 EVIDENCE -->
     <div class="fstep">
-      <div class="fstep-h"><span class="num">9</span><label>Evidence</label><span class="opt-tag">add later anytime</span></div>
+      <div class="fstep-h"><span class="num">8</span><label>Evidence</label><span class="opt-tag">add later anytime</span></div>
       <div class="evidence">
         <button class="ev-btn mobile-only" id="snapBtn">${ic('camera')} Quick snap</button>
         <button class="ev-btn desktop-only" id="uploadBtn">${ic('upload')} Upload, drop, or paste an image</button>
@@ -239,7 +239,7 @@ function renderEntry() {
 
     <!-- STEP 10 FLAG / STAR -->
     <div class="fstep">
-      <div class="fstep-h"><span class="num">10</span><label>Flag &amp; star</label></div>
+      <div class="fstep-h"><span class="num">9</span><label>Flag &amp; star</label></div>
       <div class="flagstar">
         <button class="fs-btn ${draft.isFlagged?'on':''}" id="flagBtn">${ic('flag')} <span>Flag this job</span></button>
         <button class="fs-btn star ${draft.isStarred?'on':''}" id="starBtn">${ic('star')} <span>Add to portfolio</span></button>
