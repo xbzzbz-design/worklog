@@ -59,7 +59,17 @@ const ONB_SLIDES = [
     </div>`,
     eyebrow: 'Honesty is the point',
     title: 'Even the invisible hours',
-    body: 'Meetings, covering for someone, admin — log them by the hour too. There’s no file to prove this work, so be honest with yourself. An honest record is the one thing a bad manager can’t argue with.',
+    body: 'Meetings, covering for someone, admin, shoots on location — log them by the hour too. There’s no file to prove this work, so be honest with yourself. An honest record is the one thing a bad manager can’t argue with.',
+  },
+  {
+    art: `<div class="onb-cond">
+      <div class="onb-cond-row">${ic('zap')}<span>Quick log — units now, details later</span><b class="tnum">2.5</b></div>
+      <div class="onb-cond-row">${ic('calendar-clock')}<span>Log ahead for work you know is coming</span><b>→</b></div>
+      <div class="onb-cond-row">${ic('history')}<span>Backfill a day you missed</span><b>←</b></div>
+    </div>`,
+    eyebrow: 'No time? No problem',
+    title: 'Capture now, perfect later',
+    body: 'Slammed? Tap ⚡ Quick log — jot the units in seconds, add the client and details whenever you breathe. Know what’s coming this week? Log it ahead. Forgot yesterday? Log it back. The win is capturing it at all — tidy can wait.',
   },
   {
     art: `<div class="onb-team-art">
