@@ -104,11 +104,29 @@ function logForDate(date) {
   go('entry');
 }
 
+// badge the Help nav when teammates have open (unclaimed) requests — a gentle
+// "someone needs a hand" signal, not a nag
+function updateHelpBadge() {
+  let n = 0;
+  try {
+    const me = (typeof myId === 'function') ? myId() : null;
+    n = HELP_REQUESTS.filter(h => h.status === 'open' && h.byId !== me).length;
+  } catch (e) { n = 0; }
+  document.querySelectorAll('#mNav [data-nav="helpboard"], #dNav [data-nav="helpboard"]').forEach(btn => {
+    let b = btn.querySelector('.nav-badge');
+    if (n > 0) {
+      if (!b) { b = document.createElement('span'); b.className = 'nav-badge'; btn.appendChild(b); }
+      b.textContent = n > 9 ? '9+' : n;
+    } else if (b) { b.remove(); }
+  });
+}
+
 function updateNav(name) {
   const navKey = name === 'clientDetail' ? 'clients' : name;
   document.querySelectorAll('#mNav button, #dNav button').forEach(b => {
     b.classList.toggle('on', b.dataset.nav === navKey);
   });
+  updateHelpBadge();
   // desktop url bar
   const url = document.querySelector('.winbar .url');
   if (url) url.innerHTML = `<i data-lucide="lock"></i> worklog.app/${name==='entry'?'new':name}`;

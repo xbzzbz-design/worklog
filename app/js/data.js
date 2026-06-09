@@ -26,6 +26,7 @@ const JOB_TYPES = {
 // kinds for the time-based "Meeting / Other" type
 const OTHER_KINDS = {
   MEETING:  { label: 'Meeting', icon: 'users' },
+  SHOOT:    { label: 'Shoot / on location', icon: 'video' },
   ADVISORY: { label: 'Advising / covering', icon: 'life-buoy' },
   ADMIN:    { label: 'Admin / coordination', icon: 'clipboard-list' },
   OTHER:    { label: 'Other', icon: 'circle-dashed' },

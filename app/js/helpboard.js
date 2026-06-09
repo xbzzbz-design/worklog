@@ -92,7 +92,7 @@ function wireHelpBoard(root) {
     if (i<0) return;
     markSyncing();
     if (window.WLStore && window.WLStore.deleteHelpRequest) await window.WLStore.deleteHelpRequest(HELP_REQUESTS[i].id);
-    else HELP_REQUESTS.splice(i,1);
+    HELP_REQUESTS.splice(i,1); // remove from memory after the DB delete (was only happening in mock mode)
     markSynced();
     rerenderScreen('helpboard');
     toast('Request removed', 'info');
