@@ -7,7 +7,7 @@ function freshDraft() {
   return {
     clientId: null, jobType: null, quantity: 1,
     isRevision: false, revisionRound: 1, revisionSeverity: 'STANDARD', revisionCause: null,
-    motionOn: false, motionScenes: 1,
+    motionOn: false, motionSimple: 0, motionStandard: 0, motionCustom: 0, motionCustomReason: '',
     conditionBriefIncomplete: false, conditionAssetNotProvided: false, conditionDeadlineRush: false,
     manualOverride: null, manualOverrideReason: '',
     note: '', driveLink: '', snap: null,
@@ -20,7 +20,8 @@ function freshDraft() {
 function isTimeBased() { return draft.jobType && JOB_TYPES[draft.jobType] && JOB_TYPES[draft.jobType].timeBased; }
 
 function draftCalc() {
-  const eff = Object.assign({}, draft, { motionScenes: draft.motionOn ? draft.motionScenes : 0 });
+  const eff = Object.assign({}, draft);
+  if (!draft.motionOn) { eff.motionSimple = 0; eff.motionStandard = 0; eff.motionCustom = 0; }
   if (isTimeBased()) eff.hours = draft.hours;
   return calcUnits(eff);
 }
@@ -164,12 +165,22 @@ function renderEntry() {
         <button class="bt ${draft.motionOn?'on':''}" data-m="1">${ic('clapperboard')} Has motion</button>
       </div>
       <div id="motionDetail" ${draft.motionOn?'':'hidden'}>
-        <div class="stepper sm" id="sceneStepper" style="margin-top:11px">
-          <button class="step-btn" data-s="-1">${ic('minus')}</button>
-          <div class="step-val"><b class="tnum" id="sceneVal">${draft.motionScenes}</b><small>scenes</small></div>
-          <button class="step-btn" data-s="1">${ic('plus')}</button>
-          <div class="scene-add">+<span id="sceneAdd">${u(draft.motionScenes)}</span> units</div>
+        <div class="mtier" data-mt="simple">
+          <div class="mtier-info"><b>Simple <span class="mtier-rate">+${u(MOTION_RATES.simple)}/scene</span></b><small>Still image with simple text motion</small></div>
+          <div class="mtier-step"><button class="step-btn" data-mt="simple" data-s="-1">${ic('minus')}</button><b class="tnum" id="mSimpleVal">${draft.motionSimple||0}</b><button class="step-btn" data-mt="simple" data-s="1">${ic('plus')}</button></div>
         </div>
+        <div class="mtier" data-mt="standard">
+          <div class="mtier-info"><b>Standard <span class="mtier-rate">+${u(MOTION_RATES.standard)}/scene</span></b><small>Simple, plus AI-generated video</small></div>
+          <div class="mtier-step"><button class="step-btn" data-mt="standard" data-s="-1">${ic('minus')}</button><b class="tnum" id="mStandardVal">${draft.motionStandard||0}</b><button class="step-btn" data-mt="standard" data-s="1">${ic('plus')}</button></div>
+        </div>
+        <div class="mtier custom">
+          <div class="mtier-info"><b>Complex <span class="mtier-rate">custom</span></b><small>Beyond simple &amp; standard — you set the units</small></div>
+          <input type="number" step="0.5" min="0" id="mCustomVal" class="mtier-custom" placeholder="0" value="${draft.motionCustom||''}">
+        </div>
+        <div class="mtier-reason" id="mReasonWrap" ${(draft.motionCustom>0)?'':'hidden'}>
+          <input type="text" id="mCustomReason" placeholder="What makes it complex? (required)" value="${escHtml(draft.motionCustomReason||'')}">
+        </div>
+        <div class="scene-add">+<span id="motionTotal">${u(motionUnitsOf(draft))}</span> units</div>
       </div>
     </div>
 
