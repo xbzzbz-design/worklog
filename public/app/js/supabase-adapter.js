@@ -343,8 +343,8 @@
   }
 
   async function deleteHelpRequest(id) {
-    await requireUser();
-    const { error } = await sb.from('help_requests').delete().eq('id', id);
+    const user = await requireUser();
+    const { error } = await sb.from('help_requests').delete().eq('id', id).eq('author_id', user.id);
     if (error) throw error;
     const idx = HELP_REQUESTS.findIndex(h => h.id === id);
     if (idx >= 0) HELP_REQUESTS.splice(idx, 1);

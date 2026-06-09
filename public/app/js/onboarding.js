@@ -22,12 +22,12 @@ const ONB_SLIDES = [
   },
   {
     art: `<div class="onb-grid">
-      ${Object.entries(JOB_TYPES).filter(([k,v])=>!v.timeBased).map(([k,v])=>`<div class="onb-jt"><span class="jt-ic sm" style="--jc:${v.color}">${ic(v.icon)}</span><b>${u(v.rate)}</b></div>`).join('')}
+      ${Object.entries(JOB_TYPES).filter(([k,v])=>!v.timeBased && !v.quick).map(([k,v])=>`<div class="onb-jt"><span class="jt-ic sm" style="--jc:${v.color}">${ic(v.icon)}</span><b>${v.motion?'tier':u(v.rate)}</b></div>`).join('')}
     </div>
     <div class="onb-eq">Infographic × 3 <span>=</span> <b>6.0 units</b></div>`,
-    eyebrow: 'Five job types',
+    eyebrow: 'Every job type',
     title: 'Every piece, its fair weight',
-    body: 'Each type carries a per-piece rate, and quantity multiplies it. Heavy work and high volume both get counted — nothing you made disappears.',
+    body: 'Each piece type carries a per-piece rate that quantity multiplies; motion is scored per scene by complexity. Heavy work and high volume both get counted — nothing you made disappears.',
   },
   {
     art: `<div class="onb-rev">
@@ -53,6 +53,7 @@ const ONB_SLIDES = [
   {
     art: `<div class="onb-cond">
       <div class="onb-cond-row">${ic('users')}<span>Meeting</span><b>1.5h</b></div>
+      <div class="onb-cond-row">${ic('video')}<span>Shoot / on location</span><b>4h</b></div>
       <div class="onb-cond-row">${ic('life-buoy')}<span>Advising / covering</span><b>2h</b></div>
       <div class="onb-cond-row">${ic('clipboard-list')}<span>Admin / coordination</span><b>1h</b></div>
     </div>`,

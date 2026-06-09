@@ -35,7 +35,7 @@ function syncJobMode(root) {
   const mo = isMotion();
   const show = (id, on) => { const el = root.querySelector(id); if (el) el.hidden = !on; };
   show('#otherKind', tb);
-  show('#qtyStep', !tb && !mo);   // motion uses tiered scenes instead of a quantity
+  show('#qtyStep', !mo);          // quantity (pieces) or duration (hours); motion uses tiers instead
   show('#motionStep', mo);        // motion tier builder
   show('#revStep', !tb);          // revision/edit applies to piece + motion (not meetings)
   show('#honestyNote', tb);
@@ -104,7 +104,7 @@ function renderEntry() {
       <div class="fstep-h"><span class="num">2</span><label>Job type</label></div>
       <div class="jt-grid" id="jtGrid">
         ${Object.entries(JOB_TYPES).filter(([k,v])=>!v.quick).map(([k,v])=>`
-          <button class="jt-card ${draft.jobType===k?'on':''} ${k==='INFOGRAPHIC'?'row':''} ${v.timeBased?'tb':''}" data-jt="${k}">
+          <button class="jt-card ${draft.jobType===k?'on':''} ${v.timeBased?'tb':''}" data-jt="${k}">
             <span class="jt-ic" style="--jc:${v.color}">${ic(v.icon)}</span>
             <span class="jt-name">${v.label}</span>
             ${v.motion ? `<span class="jt-rate">tiered</span>` : `<span class="jt-rate tnum">${u(v.rate)}<small>/${v.timeBased?'hr':'pc'}</small></span>`}
