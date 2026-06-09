@@ -110,12 +110,22 @@ function wireEntry(root) {
     $('#motionDetail').hidden = !draft.motionOn;
     updateSummary();
   }));
-  $$('#sceneStepper .step-btn').forEach(b => b.addEventListener('click', () => {
-    draft.motionScenes = Math.max(1, draft.motionScenes + parseInt(b.dataset.s));
-    $('#sceneVal').textContent = draft.motionScenes;
-    $('#sceneAdd').textContent = u(draft.motionScenes);
+  const syncMotion = () => {
+    const sv = $('#mSimpleVal'); if (sv) sv.textContent = draft.motionSimple || 0;
+    const tv = $('#mStandardVal'); if (tv) tv.textContent = draft.motionStandard || 0;
+    const rw = $('#mReasonWrap'); if (rw) rw.hidden = !((draft.motionCustom || 0) > 0);
+    const mt = $('#motionTotal'); if (mt) mt.textContent = u(draft.motionOn ? motionUnitsOf(draft) : 0);
     updateSummary();
+  };
+  $$('.mtier-step .step-btn').forEach(b => b.addEventListener('click', () => {
+    const key = b.dataset.mt === 'standard' ? 'motionStandard' : 'motionSimple';
+    draft[key] = Math.max(0, (draft[key] || 0) + parseInt(b.dataset.s));
+    syncMotion(); saveDraft();
   }));
+  const mCustom = $('#mCustomVal');
+  if (mCustom) mCustom.addEventListener('input', () => { draft.motionCustom = Math.max(0, parseFloat(mCustom.value) || 0); syncMotion(); saveDraft(); });
+  const mReason = $('#mCustomReason');
+  if (mReason) mReason.addEventListener('input', () => { draft.motionCustomReason = mReason.value; saveDraft(); });
 
   /* --- STEP 6 conditions --- */
   $$('#condChecks .check').forEach(c => c.addEventListener('click', () => {
@@ -239,8 +249,10 @@ function wireEntry(root) {
     if (!draft.jobType) { toast('Pick a job type', 'info'); return; }
     if (draft.isRevision && !draft.revisionCause) { toast('Choose a revision cause', 'info'); return; }
     if (draft.manualOverride != null && !draft.manualOverrideReason.trim()) { toast('Override needs a reason', 'info'); $('#ovReason').focus(); return; }
+    if (draft.motionOn && (draft.motionCustom||0) > 0 && !(draft.motionCustomReason||'').trim()) { toast('Complex motion needs a reason', 'info'); const r=$('#mCustomReason'); if (r) r.focus(); return; }
 
-    const eff = Object.assign({}, draft, { motionScenes: draft.motionOn ? draft.motionScenes : 0, flagNote: draft.flagNote });
+    const eff = Object.assign({}, draft, { flagNote: draft.flagNote });
+    if (!draft.motionOn) { eff.motionSimple = 0; eff.motionStandard = 0; eff.motionCustom = 0; eff.motionCustomReason = ''; }
     // keep the original date when editing / completing a backdated entry; otherwise today
     eff.date = draft.date || new Date().toISOString().slice(0, 10);
     eff._c = calcUnits(eff);

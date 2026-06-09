@@ -173,7 +173,7 @@ function openDetail(id) {
     rows.push(['Severity', SEVERITY[e.revisionSeverity]?.label || '—']);
     rows.push(['Cause', CAUSE[e.revisionCause]?.label || '—']);
   } else if (!_jt.timeBased) rows.push(['Type', 'New work']);
-  if (e.motionScenes>0) rows.push(['Motion', `${e.motionScenes} scenes (+${u(e.motionScenes)})`]);
+  if (hasMotion(e)) rows.push(['Motion', `${motionSummary(e)} (+${u(motionUnitsOf(e))})`]);
   const conds = [];
   if (e.conditionBriefIncomplete) conds.push('Brief incomplete');
   if (e.conditionAssetNotProvided) conds.push('Sourced assets');
@@ -238,8 +238,14 @@ function openDetail(id) {
       revisionRound: e.revisionRound || 1,
       revisionSeverity: e.revisionSeverity || 'STANDARD',
       revisionCause: e.revisionCause || null,
-      motionOn: (e.motionScenes || 0) > 0,
-      motionScenes: e.motionScenes || 1,
+      motionOn: hasMotion(e),
+      motionSimple: e.motionSimple || 0,
+      motionStandard: e.motionStandard || 0,
+      // preserve a legacy flat-scene entry's units as a custom value when editing
+      motionCustom: (!(e.motionSimple>0||e.motionStandard>0||e.motionCustom>0) && (e.motionScenes||0)>0)
+        ? e.motionScenes * 1.0 : (e.motionCustom || 0),
+      motionCustomReason: (!(e.motionSimple>0||e.motionStandard>0||e.motionCustom>0) && (e.motionScenes||0)>0)
+        ? 'Converted from an earlier motion entry' : (e.motionCustomReason || ''),
       conditionBriefIncomplete: !!e.conditionBriefIncomplete,
       conditionAssetNotProvided: !!e.conditionAssetNotProvided,
       conditionDeadlineRush: !!e.conditionDeadlineRush,

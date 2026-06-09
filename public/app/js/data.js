@@ -49,6 +49,24 @@ const CONDITIONS = {
   conditionDeadlineRush: 'Rush deadline — same-day delivery',
 };
 
+// motion tier rates (units per scene). Complex is logged as a custom value.
+const MOTION_RATES = { simple: 1.5, standard: 2 };
+
+// total motion units on an entry (new tiers, or legacy flat scenes)
+function motionUnitsOf(e) {
+  const n = (e.motionSimple || 0) * MOTION_RATES.simple + (e.motionStandard || 0) * MOTION_RATES.standard + (e.motionCustom || 0);
+  return n > 0 ? n : (e.motionScenes || 0) * 1.0;
+}
+function hasMotion(e) { return motionUnitsOf(e) > 0; }
+function motionSummary(e) {
+  const parts = [];
+  if ((e.motionSimple || 0) > 0) parts.push(`${e.motionSimple} simple`);
+  if ((e.motionStandard || 0) > 0) parts.push(`${e.motionStandard} standard`);
+  if ((e.motionCustom || 0) > 0) parts.push('complex');
+  if (!parts.length && (e.motionScenes || 0) > 0) parts.push(`${e.motionScenes} scene${e.motionScenes>1?'s':''}`);
+  return parts.join(', ');
+}
+
 /* ---- THE FORMULA ---- */
 function calcUnits(e) {
   // Quick log — the units the person tapped in ARE the value; no formula runs.
@@ -89,8 +107,19 @@ function calcUnits(e) {
     }
   }
 
-  const motionUnits = (e.motionScenes || 0) * 1.0;
-  if (motionUnits > 0) lines.push({ label: `Motion · ${e.motionScenes} scene${e.motionScenes>1?'s':''}`, val: motionUnits });
+  // motion add-on — tiered: Simple / Standard counted per scene, Complex = custom units.
+  // Falls back to the legacy flat "scenes × 1.0" for entries logged before tiers existed.
+  const ms = e.motionSimple || 0, mt = e.motionStandard || 0, mc = e.motionCustom || 0;
+  const motionNew = ms * MOTION_RATES.simple + mt * MOTION_RATES.standard + mc;
+  let motionUnits = 0;
+  if (motionNew > 0) {
+    if (ms > 0) { const v = ms * MOTION_RATES.simple; motionUnits += v; lines.push({ label: `Motion · ${ms} simple`, val: v }); }
+    if (mt > 0) { const v = mt * MOTION_RATES.standard; motionUnits += v; lines.push({ label: `Motion · ${mt} standard`, val: v }); }
+    if (mc > 0) { motionUnits += mc; lines.push({ label: `Motion · complex (custom)`, val: mc }); }
+  } else if ((e.motionScenes || 0) > 0) {
+    motionUnits = e.motionScenes * 1.0;
+    lines.push({ label: `Motion · ${e.motionScenes} scene${e.motionScenes>1?'s':''}`, val: motionUnits });
+  }
 
   const ao = SETTINGS.addOn;
   let addOnUnits = 0;

@@ -60,7 +60,7 @@ function openPdfPreview() {
             if (e.conditionBriefIncomplete) addons.push('Brief');
             if (e.conditionAssetNotProvided) addons.push('Assets');
             if (e.conditionDeadlineRush) addons.push('Rush');
-            if (e.motionScenes>0) addons.push(`Motion×${e.motionScenes}`);
+            if (hasMotion(e)) addons.push(`Motion +${u(motionUnitsOf(e))}`);
             const scope = isScope(e);
             const _jt = JOB_TYPES[e.jobType];
             const _tb = _jt && _jt.timeBased;
