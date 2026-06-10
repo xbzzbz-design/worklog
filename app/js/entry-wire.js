@@ -49,7 +49,18 @@ function wireEntry(root) {
     card.classList.add('on');
     draft.jobType = card.dataset.jt;
     if (isTimeBased()) draft.isRevision = false;
+    // reset the still/motion choice when the new type doesn't offer it
+    if (!(JOB_TYPES[draft.jobType] && JOB_TYPES[draft.jobType].hasMotionVariant)) draft.motionVariant = false;
     syncJobMode(root);
+    updateSummary();
+  }));
+
+  /* --- still / motion variant (Variation & Adaptation) --- */
+  $$('#motionVariantRow .bt').forEach(b => b.addEventListener('click', () => {
+    $$('#motionVariantRow .bt').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    draft.motionVariant = b.dataset.mv === '1';
+    saveDraft();
     updateSummary();
   }));
 

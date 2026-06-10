@@ -11,9 +11,9 @@ const SETTINGS = {
 
 // Job types — rate per piece
 const JOB_TYPES = {
-  VARIATION_TEXT: { label: 'Variation · Text', short: 'Var · Text', rate: 0.25, color: 'var(--primary)', icon: 'type' },
-  VARIATION_SWAP: { label: 'Variation · Image Swap', short: 'Var · Swap', rate: 0.5, color: 'oklch(0.55 0.13 320)', icon: 'image' },
-  ADAPTATION:     { label: 'Adaptation', short: 'Adaptation', rate: 0.5, color: 'oklch(0.5 0.12 230)', icon: 'maximize-2' },
+  VARIATION_TEXT: { label: 'Variation · Text', short: 'Var · Text', rate: 0.25, color: 'var(--primary)', icon: 'type', hasMotionVariant: true },
+  VARIATION_SWAP: { label: 'Variation · Image Swap', short: 'Var · Swap', rate: 0.5, color: 'oklch(0.55 0.13 320)', icon: 'image', hasMotionVariant: true },
+  ADAPTATION:     { label: 'Adaptation', short: 'Adaptation', rate: 0.5, color: 'oklch(0.5 0.12 230)', icon: 'maximize-2', hasMotionVariant: true },
   SINGLE_BANNER:  { label: 'Single Banner', short: 'Banner', rate: 1.0, color: 'var(--good)', icon: 'rectangle-horizontal' },
   INFOGRAPHIC:    { label: 'Infographic', short: 'Infographic', rate: 2.0, color: 'var(--bad)', icon: 'bar-chart-3' },
   MOTION:         { label: 'Motion', short: 'Motion', rate: 0, color: 'oklch(0.55 0.17 305)', icon: 'clapperboard', motion: true },
@@ -77,7 +77,10 @@ function calcUnits(e) {
     return { lines: [{ label: 'Quick log — details pending', val: units }], calculated: units, final: units, overridden: false, quick: true };
   }
   const jt = JOB_TYPES[e.jobType];
-  const rate = (CUSTOM_RATES && CUSTOM_RATES[e.jobType] != null) ? CUSTOM_RATES[e.jobType] : jt.rate;
+  let rate = (CUSTOM_RATES && CUSTOM_RATES[e.jobType] != null) ? CUSTOM_RATES[e.jobType] : jt.rate;
+  // a motion variant of a Variation/Adaptation is double the still-image rate
+  const isMotionVar = jt.hasMotionVariant && e.motionVariant;
+  if (isMotionVar) rate *= 2;
 
   // time-based types (meetings, advisory, admin) — quantity = hours, no revision/motion
   if (jt.timeBased) {
@@ -124,7 +127,7 @@ function calcUnits(e) {
 
   if (!e.isRevision) {
     baseUnits = rate * qty;
-    lines.push({ label: `${jt.short} × ${qty}`, val: baseUnits });
+    lines.push({ label: `${jt.short}${isMotionVar?' · motion':''} × ${qty}`, val: baseUnits });
   } else {
     if (e.revisionCause === 'OUR_MISTAKE') {
       baseUnits = 0;
