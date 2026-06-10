@@ -246,3 +246,19 @@ body[data-mode="mobile"] .desktop-only { display: none; }
 .mtier-reason { margin: 10px 4px 0; }
 .mtier-reason input { width: 100%; padding: 10px 12px; border: 1px solid var(--warn); border-radius: 10px; font-size: 13.5px; background: var(--warn-soft); }
 #motionDetail .scene-add { display: block; margin: 12px 4px 0; padding: 0; }
+
+/* quick-pick client chips (recent + most-logged) */
+.quick-clients { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.qc-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px 6px 6px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-size: 13px; font-weight: 700; color: var(--ink-2); transition: all .15s; }
+.qc-chip .av { width: 22px; height: 22px; border-radius: 50%; font-size: 9px; display: grid; place-items: center; font-weight: 800; }
+.qc-chip:hover { border-color: var(--faint); }
+.qc-chip.on { border-color: var(--primary); background: var(--primary-tint); color: var(--primary-700); }
+
+/* "add another to this set" running tally */
+.set-tally { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 12px 14px; border-radius: var(--r); background: var(--primary-tint); color: var(--primary-700); font-size: 13.5px; font-weight: 600; }
+.set-tally > svg { width: 17px; height: 17px; flex: none; }
+.set-tally span { flex: 1; }
+.set-tally b { font-weight: 800; }
+.set-done { padding: 6px 14px; border-radius: 999px; background: var(--card); color: var(--primary-700); font-weight: 700; font-size: 12.5px; }
+.set-done:hover { background: var(--primary-soft); }
+.save-add-btn { margin-top: 10px; }

@@ -255,6 +255,21 @@ const myEntries = () => ENTRIES.filter(isMine);
 const needsDetail = (e) => e.jobType === 'QUICK';
 const myQuickDrafts = () => myEntries().filter(needsDetail);
 
+// the client I logged most recently (for pre-filling the form)
+function lastClientId() {
+  const es = myEntries().filter(e => e.clientId && !needsDetail(e)).slice().sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+  return es.length ? es[0].clientId : null;
+}
+// my most-logged clients (for quick-pick chips), active only
+function topClientIds(n = 4) {
+  const counts = {};
+  myEntries().forEach(e => { if (e.clientId && !needsDetail(e)) counts[e.clientId] = (counts[e.clientId] || 0) + 1; });
+  return Object.keys(counts)
+    .filter(id => { const c = CLIENTS.find(x => x.id === id); return c && !c.archived; })
+    .sort((a, b) => counts[b] - counts[a])
+    .slice(0, n);
+}
+
 /* ---- aggregation helpers (personal — scoped to me) ---- */
 function entriesOn(date) { return ENTRIES.filter(e => e.date === date && isMine(e)); }
 function dayTotal(date) { return entriesOn(date).reduce((s,e)=> s + e._c.final, 0); }

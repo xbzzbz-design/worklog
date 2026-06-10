@@ -4,8 +4,11 @@
 
 let draft = null;
 function freshDraft() {
+  // pre-fill the client you logged most recently — a "suggestion" that doesn't
+  // count as an unsaved draft (prefilledClient) until you actually touch the form
+  const last = (typeof lastClientId === 'function') ? lastClientId() : null;
   return {
-    clientId: null, jobType: null, quantity: 1, motionVariant: false,
+    clientId: last, prefilledClient: !!last, jobType: null, quantity: 1, motionVariant: false,
     isRevision: false, revisionRound: 1, revisionSeverity: 'STANDARD', revisionCause: null,
     motionSimple: 0, motionStandard: 0, motionCustom: 0, motionCustomReason: '',
     conditionBriefIncomplete: false, conditionAssetNotProvided: false, conditionDeadlineRush: false,
@@ -51,7 +54,8 @@ function syncJobMode(root) {
 /* ---- draft auto-save ---- */
 const DRAFT_KEY = 'wl_draft';
 function isDraftDirty(d) {
-  return !!(d && (d.clientId || d.jobType || d.note || d.driveLink || d.snap || d.isFlagged ||
+  const clientDirty = d && d.clientId && !d.prefilledClient; // a pre-filled suggestion isn't a real draft
+  return !!(d && (clientDirty || d.jobType || d.note || d.driveLink || d.snap || d.isFlagged ||
     d.isStarred || d.isRevision || d.motionVariant || (d.motionSimple||0)>0 || (d.motionStandard||0)>0 || (d.motionCustom||0)>0 ||
     d.conditionBriefIncomplete || d.conditionAssetNotProvided || d.conditionDeadlineRush || (d.quantity||1) > 1 || d.manualOverride != null));
 }
@@ -85,6 +89,11 @@ function renderEntry() {
     <!-- STEP 1 CLIENT -->
     <div class="fstep">
       <div class="fstep-h"><span class="num">1</span><label>Client</label></div>
+      ${(()=>{ const ids=[]; const last=lastClientId(); if(last) ids.push(last); topClientIds(4).forEach(id=>{ if(!ids.includes(id)) ids.push(id); });
+        const chips=ids.slice(0,4).map(id=>CLIENTS.find(c=>c.id===id)).filter(c=>c&&!c.archived);
+        return chips.length?`<div class="quick-clients" id="quickClients">
+          ${chips.map(c=>`<button class="qc-chip ${draft.clientId===c.id?'on':''}" data-client="${c.id}"><span class="av ${avatarClass(c.id)}">${clientInitials(c.id)}</span>${escHtml(c.name)}</button>`).join('')}
+        </div>`:''; })()}
       <div class="client-select" id="clientSelect">
         <button class="select-trigger" id="clientTrigger">
           <span class="ct-val ${draft.clientId?'':'faint'}">${draft.clientId?`<span class="av ${avatarClass(draft.clientId)}" style="width:24px;height:24px;border-radius:7px;font-size:10px;display:inline-grid;place-items:center;vertical-align:middle;margin-right:8px">${clientInitials(draft.clientId)}</span>${clientName(draft.clientId)}`:'Select a client…'}</span>
@@ -254,7 +263,9 @@ function renderEntry() {
       </div>
     </div>
 
+    ${(window._setTally && window._setTally.count>0)?`<div class="set-tally" id="setTally">${ic('layers')}<span>This set so far · <b>${window._setTally.count} piece${window._setTally.count>1?'s':''}</b> · <b class="tnum">${u(window._setTally.units)}</b> units</span><button id="setDone" class="set-done">Done</button></div>`:''}
     <button class="btn full lg save-btn" id="saveBtn">${ic('check')} Save entry</button>
+    <button class="btn ghost full save-add-btn" id="saveAddBtn">${ic('plus')} Save &amp; add another to this set</button>
   </div>`;
 }
 

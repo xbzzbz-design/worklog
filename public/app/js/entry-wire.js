@@ -26,16 +26,21 @@ function wireEntry(root) {
       o.style.display = name.includes(q) ? '' : 'none';
     });
   });
-  $$('#clientList .opt').forEach(o => o.addEventListener('click', () => {
-    draft.clientId = o.dataset.client;
-    $('#clientTrigger .ct-val').innerHTML = `<span class="av ${avatarClass(draft.clientId)}" style="width:24px;height:24px;border-radius:7px;font-size:10px;display:inline-grid;place-items:center;vertical-align:middle;margin-right:8px">${clientInitials(draft.clientId)}</span>${clientName(draft.clientId)}`;
+  const selectClient = (id) => {
+    draft.clientId = id;
+    draft.prefilledClient = false; // an explicit pick, not a suggestion
+    $('#clientTrigger .ct-val').innerHTML = `<span class="av ${avatarClass(id)}" style="width:24px;height:24px;border-radius:7px;font-size:10px;display:inline-grid;place-items:center;vertical-align:middle;margin-right:8px">${clientInitials(id)}</span>${clientName(id)}`;
     $('#clientTrigger .ct-val').classList.remove('faint');
+    $$('#quickClients .qc-chip').forEach(c => c.classList.toggle('on', c.dataset.client === id));
     menu.hidden = true;
     refreshIcons();
     saveDraft(); syncThreadPicker();
-  }));
+  };
+  $$('#clientList .opt').forEach(o => o.addEventListener('click', () => selectClient(o.dataset.client)));
+  $$('#quickClients .qc-chip').forEach(c => c.addEventListener('click', () => selectClient(c.dataset.client)));
   $('.add-client').addEventListener('click', () => openClientCreate((client) => {
     draft.clientId = client.id;
+    draft.prefilledClient = false;
     saveDraft();
     rerenderScreen('entry');
   }));
@@ -248,7 +253,7 @@ function wireEntry(root) {
   });
 
   /* --- SAVE --- */
-  $('#saveBtn').addEventListener('click', async () => {
+  const doSave = async (stay, btn) => {
     if (!draft.clientId) { toast('Pick a client first', 'info'); $('#clientTrigger').classList.add('shake'); setTimeout(()=>$('#clientTrigger').classList.remove('shake'),500); return; }
     if (!draft.jobType) { toast('Pick a job type', 'info'); return; }
     if (draft.isRevision && !draft.revisionCause) { toast('Choose a revision cause', 'info'); return; }
@@ -261,7 +266,7 @@ function wireEntry(root) {
     // keep the original date when editing / completing a backdated entry; otherwise today
     eff.date = draft.date || new Date().toISOString().slice(0, 10);
     eff._c = calcUnits(eff);
-    const btn = $('#saveBtn');
+    const keptClient = eff.clientId, keptDate = draft.date;
     btn.disabled = true;
     btn.classList.add('loading');
     try {
@@ -291,11 +296,29 @@ function wireEntry(root) {
 
     clearDraft();
     markSynced();
+    const achieved = (window.checkMilestones ? checkMilestones() : []);
+
+    if (stay) {
+      // running set tally; keep the client + date, reset the rest, stay on the form
+      const t = window._setTally || { count: 0, units: 0 };
+      window._setTally = { count: t.count + 1, units: t.units + eff._c.final };
+      toast(`Added · ${u(eff._c.final)} units — next piece`, 'good');
+      draft = Object.assign(freshDraft(), { clientId: keptClient, prefilledClient: false, date: keptDate });
+      rerenderScreen('entry');
+      if (achieved.length) setTimeout(()=>celebrate(achieved[0]), 400);
+      return;
+    }
+
+    if (window._setTally) window._setTally = null;
     toast(savedMessage(eff._c.final));
     draft = freshDraft();
-    const achieved = (window.checkMilestones ? checkMilestones() : []);
     setTimeout(()=> { go('home'); if (achieved.length) setTimeout(()=>celebrate(achieved[0]), 500); }, 650);
-  });
+  };
+  $('#saveBtn').addEventListener('click', () => doSave(false, $('#saveBtn')));
+  const saveAdd = $('#saveAddBtn');
+  if (saveAdd) saveAdd.addEventListener('click', () => doSave(true, saveAdd));
+  const setDone = $('#setDone');
+  if (setDone) setDone.addEventListener('click', () => { window._setTally = null; draft = freshDraft(); go('home'); });
 
   // restore snapshot preview + cause note + thread picker for a resumed draft
   if (draft.snap) {
