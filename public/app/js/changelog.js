@@ -18,6 +18,7 @@ const CHANGELOG = [
       '“Shoot / on location” added for time-based work',
       'Team view now shows a load pulse — Healthy / Send snacks / Heavy week — instead of a scoreboard, and skips anyone who hasn’t logged so no one looks idle',
       'Help board shows a red badge when a teammate needs a hand',
+      'Helpers can leave a note on how they’re helping, and you’re alerted when your request is picked up',
       'Export PDF: Google Drive links are now real, clickable links',
     ],
   },

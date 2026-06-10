@@ -106,13 +106,26 @@ function logForDate(date) {
   go('entry');
 }
 
-// badge the Help nav when teammates have open (unclaimed) requests — a gentle
-// "someone needs a hand" signal, not a nag
+// which of my claimed requests I've already seen (so the alert clears)
+function helpSeenClaims() { try { return JSON.parse(localStorage.getItem('wl_help_seen') || '[]'); } catch (e) { return []; } }
+function markHelpClaimsSeen() {
+  try {
+    const me = (typeof myId === 'function') ? myId() : null;
+    const ids = HELP_REQUESTS.filter(h => h.byId === me && h.status === 'claimed').map(h => h.id);
+    localStorage.setItem('wl_help_seen', JSON.stringify(ids));
+  } catch (e) {}
+}
+
+// badge the Help nav for two things: teammates who need a hand (open requests),
+// and YOUR requests that someone just claimed (so you can see how they're helping)
 function updateHelpBadge() {
   let n = 0;
   try {
     const me = (typeof myId === 'function') ? myId() : null;
-    n = HELP_REQUESTS.filter(h => h.status === 'open' && h.byId !== me).length;
+    const others = HELP_REQUESTS.filter(h => h.status === 'open' && h.byId !== me).length;
+    const seen = helpSeenClaims();
+    const mineClaimed = HELP_REQUESTS.filter(h => h.byId === me && h.status === 'claimed' && !seen.includes(h.id)).length;
+    n = others + mineClaimed;
   } catch (e) { n = 0; }
   document.querySelectorAll('#mNav [data-nav="helpboard"], #dNav [data-nav="helpboard"]').forEach(btn => {
     let b = btn.querySelector('.nav-badge');

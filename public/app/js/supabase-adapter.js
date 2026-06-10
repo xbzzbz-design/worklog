@@ -106,6 +106,7 @@
     urgency: h.urgency === 'high' ? 'today' : 'soon',
     status: h.status,
     helperId: h.handled_by,
+    helperNote: h.helper_note || '',
     thanks: h.thanks_message || '',
     loggedHours: null,
   });
@@ -317,11 +318,12 @@
     return req;
   }
 
-  async function claimHelpRequest(id) {
+  async function claimHelpRequest(id, note) {
     const user = await requireUser();
     const { data, error } = await sb.from('help_requests').update({
       status: 'claimed',
       handled_by: user.id,
+      helper_note: (note && note.trim()) || null,
     }).eq('id', id).select('*').single();
     if (error) throw error;
     const req = fromDbHelp(data);
