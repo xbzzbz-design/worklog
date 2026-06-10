@@ -261,6 +261,7 @@ function openDetail(id) {
       date: e.date,
       clientId: e.clientId,
       jobType: e.jobType,
+      motionVariant: !!e.motionVariant,
       otherKind: e.otherKind || 'MEETING',
       quantity: e.quantity || 1,
       hours: e.hours || e.quantity || 1,

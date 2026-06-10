@@ -44,6 +44,7 @@
     revisionRound: r.revision_round,
     revisionSeverity: r.revision_severity,
     revisionCause: r.revision_cause,
+    motionVariant: !!r.motion_variant,
     motionScenes: r.motion_scenes || 0,
     motionSimple: r.motion_simple || 0,
     motionStandard: r.motion_standard || 0,
@@ -74,6 +75,7 @@
     revision_round: e.isRevision ? (e.revisionRound || 1) : null,
     revision_severity: e.isRevision ? (e.revisionSeverity || 'STANDARD') : null,
     revision_cause: e.isRevision ? e.revisionCause : null,
+    motion_variant: !!e.motionVariant,
     motion_scenes: 0, // legacy column — new entries use the tier columns below
     motion_simple: e.motionSimple || 0,
     motion_standard: e.motionStandard || 0,

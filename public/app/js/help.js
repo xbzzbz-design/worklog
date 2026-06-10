@@ -6,9 +6,9 @@ const HELP = {
   jobTypes: {
     title: 'Job type guide', icon: 'shapes',
     items: [
-      { h: 'Variation · Text', rate: 0.25, d: 'Same template, only the words or colours change.', ex: 'Swap headline copy, update a price, change a button colour.' },
-      { h: 'Variation · Image Swap', rate: 0.5, d: 'Same template, swap the imagery.', ex: 'Replace the product photo on an existing layout.' },
-      { h: 'Adaptation', rate: 0.5, d: 'Reformat existing work to a new size or platform.', ex: 'Portrait → landscape, Facebook post → Instagram Story.' },
+      { h: 'Variation · Text', rate: 0.25, d: 'Same template, only the words or colours change. Choose still or motion — a motion version counts double.', ex: 'Swap headline copy, update a price, change a button colour.' },
+      { h: 'Variation · Image Swap', rate: 0.5, d: 'Same template, swap the imagery. Choose still or motion — a motion version counts double.', ex: 'Replace the product photo on an existing layout.' },
+      { h: 'Adaptation', rate: 0.5, d: 'Reformat existing work to a new size or platform. Choose still or motion — a motion version counts double.', ex: 'Portrait → landscape, Facebook post → Instagram Story.' },
       { h: 'Single Banner', rate: 1.0, d: 'One fresh design piece.', ex: 'A promo banner, a social post designed from scratch.' },
       { h: 'Infographic', rate: 2.0, d: 'Complex layout that organises information.', ex: 'Step-by-step guide, data visualisation, comparison chart.' },
       { h: 'Motion', rate: 'tiered', d: 'Animation work — scored per scene by how heavy each one is, not a flat rate. Pick the tier that matches the effort.',

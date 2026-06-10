@@ -5,7 +5,7 @@
 let draft = null;
 function freshDraft() {
   return {
-    clientId: null, jobType: null, quantity: 1,
+    clientId: null, jobType: null, quantity: 1, motionVariant: false,
     isRevision: false, revisionRound: 1, revisionSeverity: 'STANDARD', revisionCause: null,
     motionSimple: 0, motionStandard: 0, motionCustom: 0, motionCustomReason: '',
     conditionBriefIncomplete: false, conditionAssetNotProvided: false, conditionDeadlineRush: false,
@@ -36,6 +36,7 @@ function syncJobMode(root) {
   const show = (id, on) => { const el = root.querySelector(id); if (el) el.hidden = !on; };
   show('#otherKind', tb);
   show('#qtyStep', !mo);          // quantity (pieces) or duration (hours); motion uses tiers instead
+  show('#motionVariantRow', !!(draft.jobType && JOB_TYPES[draft.jobType] && JOB_TYPES[draft.jobType].hasMotionVariant)); // still/motion choice for variation & adaptation
   show('#motionStep', mo);        // motion tier builder
   show('#revStep', !tb);          // revision/edit applies to piece + motion (not meetings)
   show('#honestyNote', tb);
@@ -51,7 +52,7 @@ function syncJobMode(root) {
 const DRAFT_KEY = 'wl_draft';
 function isDraftDirty(d) {
   return !!(d && (d.clientId || d.jobType || d.note || d.driveLink || d.snap || d.isFlagged ||
-    d.isStarred || d.isRevision || (d.motionSimple||0)>0 || (d.motionStandard||0)>0 || (d.motionCustom||0)>0 ||
+    d.isStarred || d.isRevision || d.motionVariant || (d.motionSimple||0)>0 || (d.motionStandard||0)>0 || (d.motionCustom||0)>0 ||
     d.conditionBriefIncomplete || d.conditionAssetNotProvided || d.conditionDeadlineRush || (d.quantity||1) > 1 || d.manualOverride != null));
 }
 function saveDraft() {
@@ -117,6 +118,10 @@ function renderEntry() {
       <div class="fstep-h"><span class="num">3</span><label id="qtyLabel">Quantity</label></div>
       <div class="other-kind" id="otherKind" hidden>
         ${Object.entries(OTHER_KINDS).map(([k,v])=>`<button class="kind-chip ${draft.otherKind===k?'on':''}" data-kind="${k}">${ic(v.icon)} ${v.label}</button>`).join('')}
+      </div>
+      <div class="bigtoggle" id="motionVariantRow" hidden style="margin-bottom:11px">
+        <button class="bt ${!draft.motionVariant?'on':''}" data-mv="0">${ic('image')} Still image</button>
+        <button class="bt ${draft.motionVariant?'on':''}" data-mv="1">${ic('clapperboard')} Motion <small>×2</small></button>
       </div>
       <div class="stepper" id="qtyStepper">
         <button class="step-btn" data-q="-1">${ic('minus')}</button>
