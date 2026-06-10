@@ -71,22 +71,14 @@ function helpCard(h) {
     </div>
     <div class="hc-title">${h.title}</div>
     <div class="hc-need">${h.need}</div>
+    ${(claimed||resolved) && h.helperNote ? `<div class="hc-note">${ic('message-circle')} ${escHtml(h.helperNote)}<span class="hc-note-by">— ${helper.name}</span></div>` : ''}
     ${resolved && h.thanks ? `<div class="hc-thanks">${ic('quote')} ${h.thanks}<span class="hc-thanks-to">— ${by.name} to ${helper.name}</span></div>` : ''}
     <div class="hc-foot">${foot}</div>
   </div>`;
 }
 
 function wireHelpBoard(root) {
-  root.querySelectorAll('[data-claim]').forEach(b=>b.addEventListener('click', ()=> runAction(b, async ()=>{
-    const h = HELP_REQUESTS.find(x=>x.id===b.dataset.claim);
-    if (!h) return;
-    markSyncing();
-    if (window.WLStore && window.WLStore.claimHelpRequest) await window.WLStore.claimHelpRequest(h.id);
-    else { h.status='claimed'; h.helperId=window.WL_CURRENT_USER_ID; }
-    markSynced();
-    rerenderScreen('helpboard');
-    toast('Thank you — they’ll feel that', 'good');
-  }, 'Could not claim this request')));
+  root.querySelectorAll('[data-claim]').forEach(b=>b.addEventListener('click', ()=> openClaim(b.dataset.claim)));
   root.querySelectorAll('[data-cancel]').forEach(b=>b.addEventListener('click', ()=> runAction(b, async ()=>{
     const i = HELP_REQUESTS.findIndex(x=>x.id===b.dataset.cancel);
     if (i<0) return;
@@ -117,6 +109,39 @@ function wireHelpBoard(root) {
   }));
   const ask = root.querySelector('#askHelp');
   if (ask) ask.addEventListener('click', openAskHelp);
+  // viewing the board clears the "someone claimed your request" alert
+  if (typeof markHelpClaimsSeen === 'function') { markHelpClaimsSeen(); if (typeof updateHelpBadge === 'function') updateHelpBadge(); }
+}
+
+// lend a hand — optionally leave a note on HOW you're helping (not always doing
+// the work; sometimes it's buying time, pushing a deadline, splitting a batch)
+function openClaim(id) {
+  const h = HELP_REQUESTS.find(x => x.id === id); if (!h) return;
+  const el = mountOverlay('detailModal');
+  el.innerHTML = `
+    <div class="dm-overlay"></div>
+    <div class="dm-sheet" style="max-width:440px">
+      <div class="dm-grab"></div>
+      <div class="ask-head">${ic('hand-helping')}<div><b>Lend a hand</b><small>${escHtml(h.title)} — ${escHtml(teamMember(h.byId).name)}</small></div></div>
+      <div class="ask-body">
+        <div class="field"><label>Add a note <span class="opt-tag">optional</span></label>
+          <textarea id="claimNote" class="ask-in" rows="3" placeholder="How are you helping? e.g. “I’ll take 3 of the banners,” or “I’ll push the deadline to Friday so you’ve got room.”"></textarea></div>
+      </div>
+      <button class="btn full lg" id="claimGo">${ic('hand-helping')} I’ve got this</button>
+    </div>`;
+  el.classList.add('open');
+  refreshIcons();
+  el.querySelector('.dm-overlay').addEventListener('click', closeDetail);
+  el.querySelector('#claimGo').addEventListener('click', (ev)=> runAction(ev.currentTarget, async ()=>{
+    const note = el.querySelector('#claimNote').value.trim();
+    markSyncing();
+    if (window.WLStore && window.WLStore.claimHelpRequest) await window.WLStore.claimHelpRequest(h.id, note);
+    else { h.status='claimed'; h.helperId = myId(); h.helperNote = note; }
+    markSynced();
+    closeDetail();
+    rerenderScreen('helpboard');
+    toast('Thank you — they’ll feel that', 'good');
+  }, 'Could not claim this request'));
 }
 
 function openResolve(id) {
