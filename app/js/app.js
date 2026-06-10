@@ -50,6 +50,7 @@ function go(name) {
     if (window._pendingEntryDate) draft.date = window._pendingEntryDate;
   } else {
     window._pendingEntryDate = null;
+    window._setTally = null; // leaving the form ends the current "set"
   }
   const mount = activeMount();
   const screen = SCREENS[name];
@@ -260,6 +261,7 @@ function openDetail(id) {
     draft = Object.assign(freshDraft(), {
       date: e.date,
       clientId: e.clientId,
+      prefilledClient: false,
       jobType: e.jobType,
       motionVariant: !!e.motionVariant,
       otherKind: e.otherKind || 'MEETING',
