@@ -22,12 +22,12 @@ const ONB_SLIDES = [
   },
   {
     art: `<div class="onb-grid">
-      ${Object.entries(JOB_TYPES).filter(([k,v])=>!v.timeBased && !v.quick).map(([k,v])=>`<div class="onb-jt"><span class="jt-ic sm" style="--jc:${v.color}">${ic(v.icon)}</span><b>${v.motion?'tier':u(v.rate)}</b></div>`).join('')}
+      ${Object.entries(JOB_TYPES).filter(([k,v])=>!v.quick).map(([k,v])=>`<div class="onb-jt"><span class="jt-ic sm" style="--jc:${v.color}">${ic(v.icon)}</span><b>${v.set?'set':v.motion?'tier':v.timeBased?'/hr':u(v.rate)}</b></div>`).join('')}
     </div>
     <div class="onb-eq">Infographic × 3 <span>=</span> <b>6.0 units</b></div>`,
     eyebrow: 'Every job type',
     title: 'Every piece, its fair weight',
-    body: 'Each piece type carries a per-piece rate that quantity multiplies; motion is scored per scene by complexity. Heavy work and high volume both get counted — nothing you made disappears.',
+    body: 'Each piece type carries a per-piece rate that quantity multiplies; motion is scored per scene, a photo set bundles several into one line, and meetings/shoots count by the hour. Heavy work and high volume both get counted — nothing you made disappears.',
   },
   {
     art: `<div class="onb-rev">

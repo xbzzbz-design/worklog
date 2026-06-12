@@ -60,11 +60,11 @@
 .jt-name { font-size: 13.5px; font-weight: 700; line-height: 1.15; }
 .jt-rate { position: absolute; top: 13px; right: 14px; font-size: 15px; font-weight: 800; color: var(--ink); }
 .jt-rate small { font-size: 10px; color: var(--faint); font-weight: 600; }
-.jt-card.row, .jt-card.tb { grid-column: span 2; flex-direction: row; align-items: center; min-height: auto; gap: 12px; }
-.jt-card.row .jt-ic, .jt-card.tb .jt-ic { margin-bottom: 0; }
-.jt-card.row .jt-name, .jt-card.tb .jt-name { font-size: 15px; }
+.jt-card.row { grid-column: span 2; flex-direction: row; align-items: center; min-height: auto; gap: 12px; }
+.jt-card.row .jt-ic { margin-bottom: 0; }
+.jt-card.row .jt-name { font-size: 15px; }
+/* Meeting/Other: normal-sized card (balances the grid) with a dashed "time-based" hint */
 .jt-card.tb { border-style: dashed; }
-.jt-card.tb::after { content: "time-based"; position: absolute; bottom: 9px; right: 14px; font-size: 10px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: .03em; }
 
 /* meeting / other kind chips */
 .other-kind { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }

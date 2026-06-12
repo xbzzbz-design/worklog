@@ -136,21 +136,14 @@ function wireEntry(root) {
   const mReason = $('#mCustomReason');
   if (mReason) mReason.addEventListener('input', () => { draft.motionCustomReason = mReason.value; saveDraft(); });
 
-  /* --- PHOTO SET cart (rebinds itself after each change) --- */
+  /* --- PHOTO SET builder: a stepper per piece type (rebinds after each tap) --- */
   function wireSet() {
     const builder = $('#setBuilder');
     if (!builder) return;
     const rerender = () => { builder.innerHTML = renderSetCart(); refreshIcons(); wireSet(); updateSummary(); saveDraft(); };
-    const add = $('#setAdd');
-    if (add) add.addEventListener('click', () => { draft.setItems = draft.setItems || []; const def = setPieceTypes()[0]; draft.setItems.push({ jobType: def ? def[0] : 'SINGLE_BANNER', quantity: 1 }); rerender(); });
-    builder.querySelectorAll('.set-type').forEach(sel => sel.addEventListener('change', () => {
-      draft.setItems[+sel.dataset.setI].jobType = sel.value; saveDraft(); updateSummary();
-      const t = $('#setTotal'); if (t) t.textContent = u(calcUnits(draft).final);
+    builder.querySelectorAll('.mtier-step .step-btn').forEach(b => b.addEventListener('click', () => {
+      const k = b.dataset.setk; setSetQty(k, Math.max(0, setGetQty(k) + parseInt(b.dataset.sd))); rerender();
     }));
-    builder.querySelectorAll('.set-step .step-btn').forEach(b => b.addEventListener('click', () => {
-      const it = draft.setItems[+b.dataset.setI]; it.quantity = Math.max(1, (it.quantity || 1) + parseInt(b.dataset.sd)); rerender();
-    }));
-    builder.querySelectorAll('[data-set-del]').forEach(b => b.addEventListener('click', () => { draft.setItems.splice(+b.dataset.setDel, 1); rerender(); }));
   }
   wireSet();
 
