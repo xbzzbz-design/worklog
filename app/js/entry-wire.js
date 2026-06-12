@@ -29,6 +29,11 @@ function wireEntry(root) {
   const selectClient = (id) => {
     draft.clientId = id;
     draft.prefilledClient = false; // an explicit pick, not a suggestion
+    // pre-select the job type you log most for this client (saves a tap)
+    if (!draft.jobType) {
+      const guess = (typeof topJobTypeForClient === 'function') ? topJobTypeForClient(id) : null;
+      if (guess) { draft.jobType = guess; const gv = JOB_TYPES[guess]; if (gv && !gv.timeBased && !gv.motion && !gv.set) draft.quantity = draft.quantity || 1; saveDraft(); rerenderScreen('entry'); return; }
+    }
     $('#clientTrigger .ct-val').innerHTML = `<span class="av ${avatarClass(id)}" style="width:24px;height:24px;border-radius:7px;font-size:10px;display:inline-grid;place-items:center;vertical-align:middle;margin-right:8px">${clientInitials(id)}</span>${clientName(id)}`;
     $('#clientTrigger .ct-val').classList.remove('faint');
     $$('#quickClients .qc-chip').forEach(c => c.classList.toggle('on', c.dataset.client === id));
@@ -48,15 +53,31 @@ function wireEntry(root) {
   const fresh = $('#draftFresh');
   if (fresh) fresh.addEventListener('click', () => { clearDraft(); draft = freshDraft(); rerenderScreen('entry'); });
 
-  /* --- STEP 2 job type --- */
+  /* --- STEP 2 job type (tap a selected piece type again to +1 the quantity) --- */
+  const countable = (k) => { const v = JOB_TYPES[k]; return v && !v.timeBased && !v.motion && !v.set; };
+  const syncJtCount = () => {
+    $$('#jtGrid .jt-count').forEach(b => b.remove());
+    if (countable(draft.jobType) && (draft.quantity || 1) > 1) {
+      const on = $('#jtGrid .jt-card.on');
+      if (on) { const b = document.createElement('span'); b.className = 'jt-count'; b.textContent = '×' + draft.quantity; on.appendChild(b); }
+    }
+  };
   $$('#jtGrid .jt-card').forEach(card => card.addEventListener('click', () => {
+    const k = card.dataset.jt;
+    if (k === draft.jobType && countable(k)) {           // re-tap → +1 piece
+      draft.quantity = (draft.quantity || 1) + 1;
+      const qv = $('#qtyVal'); if (qv) qv.textContent = draft.quantity;
+      syncJtCount(); updateSummary();
+      return;
+    }
     $$('#jtGrid .jt-card').forEach(c=>c.classList.remove('on'));
     card.classList.add('on');
-    draft.jobType = card.dataset.jt;
+    draft.jobType = k;
+    if (countable(k)) draft.quantity = 1;                 // fresh count for a new piece type
     if (isTimeBased()) draft.isRevision = false;
-    // reset the still/motion choice when the new type doesn't offer it
-    if (!(JOB_TYPES[draft.jobType] && JOB_TYPES[draft.jobType].hasMotionVariant)) draft.motionVariant = false;
+    if (!(JOB_TYPES[k] && JOB_TYPES[k].hasMotionVariant)) draft.motionVariant = false;
     syncJobMode(root);
+    syncJtCount();
     updateSummary();
   }));
 
@@ -86,9 +107,20 @@ function wireEntry(root) {
     } else {
       draft.quantity = Math.max(1, draft.quantity + dir);
       $('#qtyVal').textContent = draft.quantity;
+      syncJtCount();
     }
     updateSummary();
   }));
+
+  /* --- collapse / expand the optional details --- */
+  const moreBtn = $('#moreToggle');
+  if (moreBtn) moreBtn.addEventListener('click', () => {
+    const ex = $('#formExtra'); if (!ex) return;
+    const opening = ex.hidden;
+    ex.hidden = !opening;
+    moreBtn.classList.toggle('open', opening);
+  });
+  syncJtCount(); // reflect a resumed/edited draft's quantity badge
 
   /* --- STEP 4 new/revision --- */
   $$('#revToggle .bt').forEach(b => b.addEventListener('click', () => {

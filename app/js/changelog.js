@@ -16,6 +16,7 @@ const CHANGELOG = [
       'Motion is now its own job type, scored by scene complexity (Simple / Standard / Complex)',
       'Variation & Adaptation can be marked Still or Motion — a motion version counts double',
       'New “Photo set” job type — add each piece into one cart; the set is one line on the report and one piece for difficulty, and can be revised as a whole',
+      'Faster logging: a sticky Save bar (no scrolling to save), optional sections collapsed by default, the job type you use most pre-selected per client, and tap a job-type card again to +1 the quantity',
       'Client difficulty now weights revisions by severity, cause and how many rounds the same piece took (minor tweaks barely count; our mistakes don’t)',
       '“Shoot / on location” added for time-based work',
       'Team view now shows a load pulse — Healthy / Send snacks / Heavy week — instead of a scoreboard, and skips anyone who hasn’t logged so no one looks idle',

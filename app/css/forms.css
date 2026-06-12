@@ -279,3 +279,40 @@ body[data-mode="mobile"] .desktop-only { display: none; }
 .set-add:hover { background: var(--primary-tint); border-color: var(--primary); }
 .set-add svg { width: 15px; height: 15px; }
 .set-total { font-size: 13px; font-weight: 700; color: var(--good-ink); padding-top: 4px; }
+
+/* ============================================================
+   Faster logging: sticky save bar, collapsible details, tap-count
+   ============================================================ */
+.save-bar {
+  position: sticky; bottom: 0; z-index: 20;
+  display: flex; align-items: center; gap: 10px;
+  margin: 18px 0 0; padding: 11px 14px;
+  padding-bottom: calc(11px + env(safe-area-inset-bottom));
+  background: var(--card); border: 1px solid var(--line); border-bottom: none;
+  border-radius: 16px 16px 0 0; box-shadow: 0 -8px 24px oklch(0.3 0.02 60 / 0.1);
+}
+.sb-total { flex: 1; display: flex; align-items: baseline; gap: 5px; min-width: 0; }
+.sb-total b { font-size: 24px; font-weight: 800; color: var(--primary); letter-spacing: -0.02em; }
+.sb-total small { font-size: 12px; color: var(--faint); font-weight: 600; }
+.sb-add { flex: none; padding: 11px 13px; }
+.sb-save { flex: none; }
+
+.more-toggle {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  padding: 13px 15px; margin-top: 4px;
+  border: 1px dashed var(--line); border-radius: var(--r);
+  background: var(--paper-2); color: var(--ink-2); font-weight: 700; font-size: 14px;
+}
+.more-toggle:hover { border-color: var(--faint); }
+.more-toggle small { color: var(--muted); font-weight: 500; }
+.more-toggle svg { width: 16px; height: 16px; }
+.more-toggle svg:last-child { margin-left: auto; transition: transform .2s; }
+.more-toggle.open svg:last-child { transform: rotate(180deg); }
+
+.jt-card { position: relative; }
+.jt-count {
+  position: absolute; bottom: 10px; right: 10px;
+  min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
+  background: var(--primary); color: #fff; font-size: 11px; font-weight: 800;
+  display: grid; place-items: center; box-shadow: 0 1px 3px oklch(0.3 0.02 60 / 0.2);
+}
