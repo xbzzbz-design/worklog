@@ -294,8 +294,13 @@ function linkCandidates(clientId) {
     .sort((a,b)=> a.date<b.date?1:-1).slice(0,8);
 }
 
-/* ---- client difficulty score (0–100 composite + evidence) ---- */
-const DIFF_WEIGHTS = { revRate: 0.30, scope: 0.30, rush: 0.15, gaps: 0.15, depth: 0.10 };
+/* ---- client difficulty score (0–100 composite + evidence) ----
+   "How hard to work WITH" — weighted by how heavy each revision was, who caused
+   it, and how many rounds the SAME piece went through (a client who jabs one
+   piece 4× outweighs four pieces revised once). Not about volume. */
+const SEV_W = { MINOR: 0.25, STANDARD: 0.5, MAJOR: 1.0 };
+const CAUSE_W = { OUR_MISTAKE: 0, BRIEF_INCOMPLETE: 0.8, CLIENT_CHANGED: 1.0, SCOPE_CREEP: 1.3 };
+const DIFF_WEIGHTS = { revBurden: 0.40, scope: 0.30, rush: 0.15, gaps: 0.15 };
 function computeDifficulty(id) {
   const es = ENTRIES.filter(e=>e.clientId===id);
   const n = es.length || 1;
@@ -303,15 +308,23 @@ function computeDifficulty(id) {
   const scopeCount = es.filter(isScope).length;
   const rushCount = es.filter(e=>e.conditionDeadlineRush).length;
   const gapsCount = es.filter(e=>e.conditionBriefIncomplete || e.conditionAssetNotProvided).length;
+
+  // revision burden = Σ severity × cause × round  (our-mistake = 0; round caps at 5)
+  let burden = 0;
+  revs.forEach(e => {
+    const sev = SEV_W[e.revisionSeverity] != null ? SEV_W[e.revisionSeverity] : 0.5;
+    const cause = CAUSE_W[e.revisionCause] != null ? CAUSE_W[e.revisionCause] : 1.0;
+    const round = Math.min(e.revisionRound || 1, 5);
+    burden += sev * cause * round;
+  });
   const rounds = revs.map(e=>e.revisionRound||1);
-  const avgRound = rounds.length ? sum(rounds, r=>r)/rounds.length : 0;
+  const maxRound = rounds.length ? Math.max(...rounds) : 0;
 
   const norm = {
-    revRate: revs.length / n,
+    revBurden: Math.min(burden / (n * 1.5), 1), // burden per job, capped
     scope: Math.min(scopeCount * 0.25, 1),
     rush: rushCount / n,
     gaps: gapsCount / n,
-    depth: Math.min(avgRound / 4, 1),
   };
   let raw = 0;
   for (const k in DIFF_WEIGHTS) raw += norm[k] * DIFF_WEIGHTS[k]; // 0–1 composite
@@ -325,11 +338,10 @@ function computeDifficulty(id) {
             : { label:'Tough', tone:'bad' };
 
   const factors = [
-    { key:'revRate', label:'Revision rate', detail:`${revs.length} of ${es.length} jobs were revisions` },
+    { key:'revBurden', label:'Revision burden', detail: revs.length ? `${revs.length} revision${revs.length===1?'':'s'} · deepest ${maxRound} round${maxRound===1?'':'s'} · weighted by severity` : 'No revisions on record' },
     { key:'scope', label:'Scope creep', detail:`${scopeCount} scope flag${scopeCount===1?'':'s'} on record` },
     { key:'rush', label:'Rush jobs', detail:`${rushCount} same-day rush${rushCount===1?'':'es'}` },
     { key:'gaps', label:'Briefs / assets', detail:`${gapsCount} job${gapsCount===1?'':'s'} with missing brief or assets` },
-    { key:'depth', label:'Revision depth', detail:`avg ${avgRound.toFixed(1)} rounds per revision` },
   ].map(f => ({ ...f, pct: Math.round(norm[f.key]*100), weight: Math.round(DIFF_WEIGHTS[f.key]*100) }));
 
   return { score, tier, factors, count: es.length };

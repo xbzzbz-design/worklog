@@ -170,7 +170,7 @@ function renderClientDetail() {
           <small class="df-d">${f.detail} · weighted ${f.weight}%</small>
         </div>`).join('')}
       </div>
-      <div class="diff-note">${ic('info')} A weighted blend of revision rate, scope creep, rush jobs, missing briefs/assets, and revision depth — your evidence when talking capacity with a lead.</div>
+      <div class="diff-note">${ic('info')} Weighted by how heavy each revision was, who caused it, and how many rounds the same piece went through — plus scope creep, rush jobs and missing briefs. Minor tweaks barely move it; our own mistakes don't count. Your evidence when talking capacity with a lead.</div>
     </div>`; })()}
 
     <div class="section-h"><h2>History</h2><span class="link">${history.length} entries</span></div>
