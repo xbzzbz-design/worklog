@@ -357,8 +357,8 @@ body[data-theme="dark"] .botnav { background: oklch(0.235 0.013 66 / 0.85); }
 
 /* a screen pane */
 .screen-pane { display: none; }
-.screen-pane.active { display: block; animation: fade .28s ease both; }
-@keyframes fade { from { transform: translateY(7px); } to { transform: none; } }
+.screen-pane.active { display: block; animation: fade .15s ease both; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 /* Help nav badge — teammates have open requests */
 #mNav button, #dNav button { position: relative; }
@@ -376,3 +376,23 @@ body[data-theme="dark"] .botnav { background: oklch(0.235 0.013 66 / 0.85); }
 #dNav button .nav-dot { top: 50%; transform: translateY(-50%); right: 12px; }
 #menuSheet .ms-item { position: relative; }
 #menuSheet .ms-item .nav-dot { top: 50%; transform: translateY(-50%); right: 38px; }
+
+/* ============================================================
+   Performance / mobile interaction polish
+   ============================================================ */
+/* instant taps: kill the grey tap flash + the double-tap-to-zoom delay */
+* { -webkit-tap-highlight-color: transparent; }
+button, a, label, select, input[type="button"], .preset, .chip, .mchip, .kind-chip,
+[data-nav], [data-go], [data-client], .opt, .bt, .fchip { touch-action: manipulation; }
+/* don't let a tap-hold select button text (feels janky on mobile) */
+button, .botnav, .seg, .preset, .chip, .mchip, .bt, .fchip, [data-nav] { -webkit-user-select: none; user-select: none; }
+/* scroll stays inside the panel (no pull-to-refresh / scroll-chaining jank) + momentum */
+.app-scroll, .desk-main, .pdf-scroll, .opt-list, .select-menu { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+/* skip layout + paint for off-screen cards in long lists (cheap virtualization) */
+.entry { content-visibility: auto; contain-intrinsic-size: auto 66px; }
+.cb-row, .mem-row, .help-card, .tl-group { content-visibility: auto; contain-intrinsic-size: auto 88px; }
+/* respect users who ask for less motion */
+@media (prefers-reduced-motion: reduce) {
+  .screen-pane.active { animation: none; }
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
