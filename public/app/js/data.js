@@ -304,6 +304,15 @@ function topClientIds(n = 4) {
     .slice(0, n);
 }
 
+// the job type I log most for a client (to pre-select after picking the client)
+function topJobTypeForClient(id) {
+  const counts = {};
+  myEntries().forEach(e => { if (e.clientId === id && !needsDetail(e)) counts[e.jobType] = (counts[e.jobType] || 0) + 1; });
+  let best = null, n = 0;
+  for (const k in counts) if (counts[k] > n) { n = counts[k]; best = k; }
+  return best;
+}
+
 /* ---- aggregation helpers (personal — scoped to me) ---- */
 function entriesOn(date) { return ENTRIES.filter(e => e.date === date && isMine(e)); }
 function dayTotal(date) { return entriesOn(date).reduce((s,e)=> s + e._c.final, 0); }

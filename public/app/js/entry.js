@@ -104,6 +104,11 @@ function renderEntry() {
   const d = draft;
 
   const clientOpts = CLIENTS.filter(c=>!c.archived);
+  // the optional sections start collapsed; auto-open them when a draft already
+  // has any of that data (e.g. editing an existing entry)
+  const extraOpen = !!(draft.conditionBriefIncomplete || draft.conditionAssetNotProvided || draft.conditionDeadlineRush
+    || draft.note || draft.snap || draft.driveLink || draft.isFlagged || draft.isStarred || draft.manualOverride != null);
+  const liveTotal = draft.jobType ? u(draftCalc().final) : '0.0';
 
   return `
   <div class="page form">
@@ -231,6 +236,10 @@ function renderEntry() {
       <div id="setBuilder">${renderSetCart()}</div>
     </div>
 
+    <!-- OPTIONAL DETAILS (collapsed by default) -->
+    <button class="more-toggle ${extraOpen?'open':''}" id="moreToggle" type="button">${ic('plus')} <span>Add details</span> <small>conditions · note · evidence · flag</small> ${ic('chevron-down')}</button>
+    <div id="formExtra" ${extraOpen?'':'hidden'}>
+
     <!-- STEP 6 CONDITIONS -->
     <div class="fstep">
       <div class="fstep-h"><span class="num">5</span><label>Conditions</label><span class="opt-tag">+${u(SETTINGS.addOn)} each</span></div>
@@ -296,9 +305,16 @@ function renderEntry() {
       </div>
     </div>
 
+    </div><!-- /formExtra -->
+
     ${(window._setTally && window._setTally.count>0)?`<div class="set-tally" id="setTally">${ic('layers')}<span>Logged this run · <b>${window._setTally.count} piece${window._setTally.count>1?'s':''}</b> · <b class="tnum">${u(window._setTally.units)}</b> units</span><button id="setDone" class="set-done">Done</button></div>`:''}
-    <button class="btn full lg save-btn" id="saveBtn">${ic('check')} Save entry</button>
-    <button class="btn ghost full save-add-btn" id="saveAddBtn">${ic('plus')} Save &amp; add another</button>
+
+    <!-- sticky save bar (always reachable, no scroll) -->
+    <div class="save-bar">
+      <div class="sb-total"><b class="tnum" id="stickyTotal">${liveTotal}</b><small>units</small></div>
+      <button class="btn ghost sb-add" id="saveAddBtn">${ic('plus')} &amp; add</button>
+      <button class="btn lg sb-save" id="saveBtn">${ic('check')} Save</button>
+    </div>
   </div>`;
 }
 
@@ -308,9 +324,11 @@ function updateSummary() {
   const totalEl = document.getElementById('sumTotal');
   if (!linesEl || !totalEl) return;
 
+  const sticky = document.getElementById('stickyTotal');
   if (!draft.jobType) {
     linesEl.innerHTML = `<div class="sum-empty">${ic('arrow-up')} Pick a job type to see the breakdown</div>`;
     countUp(totalEl, 0);
+    if (sticky) countUp(sticky, 0);
     refreshIcons();
     document.getElementById('overrideToggle').style.display = 'none';
     saveDraft();
@@ -319,6 +337,7 @@ function updateSummary() {
   document.getElementById('overrideToggle').style.display = '';
 
   const c = draftCalc();
+  if (sticky) countUp(sticky, c.final);
   linesEl.innerHTML = c.lines.map(l=>`
     <div class="sum-line ${l.muted?'muted':''}">
       <span>${l.label}</span>
