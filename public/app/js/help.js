@@ -13,6 +13,8 @@ const HELP = {
       { h: 'Infographic', rate: 2.0, d: 'Complex layout that organises information.', ex: 'Step-by-step guide, data visualisation, comparison chart.' },
       { h: 'Motion', rate: 'tiered', d: 'Animation work — scored per scene by how heavy each one is, not a flat rate. Pick the tier that matches the effort.',
         list: ['Simple (+1.5/scene) — still image with simple text motion', 'Standard (+2/scene) — simple, plus AI-generated video', 'Complex (custom) — heavier, e.g. an animated infographic or a long clip cut with self-generated audio', 'Adapting/editing existing motion? Log as Motion and tick Revision — severity discounts the scenes'] },
+      { h: 'Photo set', rate: 'cart', d: 'A batch delivered together — add each piece into one entry. Its combined units stay on a single line, so an over-scope set is obvious without a quota. Revise the whole set as one piece.',
+        list: ['Add a row per piece (Banner, Infographic, Variation…) with its quantity', 'Total = the pieces added together', 'A revision applies the severity to the whole set — and counts it as one piece in client difficulty'] },
       { h: 'Meeting / Other', rate: 1.0, d: 'Time-based, not piece-based — counts per hour (1 unit = 1 hour). For work that has no file but still eats your day.', ex: 'Meetings, briefings, covering for someone, admin & coordination.' },
     ],
   },

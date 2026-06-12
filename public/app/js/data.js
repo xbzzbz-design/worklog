@@ -17,6 +17,7 @@ const JOB_TYPES = {
   SINGLE_BANNER:  { label: 'Single Banner', short: 'Banner', rate: 1.0, color: 'var(--good)', icon: 'rectangle-horizontal' },
   INFOGRAPHIC:    { label: 'Infographic', short: 'Infographic', rate: 2.0, color: 'var(--bad)', icon: 'bar-chart-3' },
   MOTION:         { label: 'Motion', short: 'Motion', rate: 0, color: 'oklch(0.55 0.17 305)', icon: 'clapperboard', motion: true },
+  PHOTOSET:       { label: 'Photo set', short: 'Set', rate: 0, color: 'oklch(0.55 0.12 200)', icon: 'layout-grid', set: true },
   OTHER:          { label: 'Meeting / Other', short: 'Meeting', rate: 1.0, color: 'oklch(0.55 0.05 60)', icon: 'users', timeBased: true },
   // Quick log — a units-only placeholder logged in seconds; client / job type
   // get filled in later. Never offered in the job-type picker (quick:true).
@@ -60,6 +61,9 @@ function motionUnitsOf(e) {
   return n > 0 ? n : (e.motionScenes || 0) * 1.0;
 }
 function hasMotion(e) { return motionUnitsOf(e) > 0; }
+// photo set helpers
+function setSummary(e) { return (e.setItems || []).map(it => { const j = JOB_TYPES[it.jobType] || { short: it.jobType }; return `${j.short}×${it.quantity || 1}`; }).join(', '); }
+function setQty(e) { return (e.setItems || []).reduce((s, it) => s + (it.quantity || 1), 0); }
 function motionSummary(e) {
   const parts = [];
   if ((e.motionSimple || 0) > 0) parts.push(`${e.motionSimple} simple`);
@@ -89,6 +93,36 @@ function calcUnits(e) {
     const baseUnits = rate * hours;
     const lines = [{ label: `${kind.label} · ${hours}h`, val: baseUnits }];
     const calculated = baseUnits;
+    const final = (e.manualOverride != null) ? e.manualOverride : calculated;
+    return { lines, calculated, final, overridden: e.manualOverride != null };
+  }
+
+  // Photo set — one entry holding several typed pieces (a cart). A revision
+  // applies the revision severity to the whole set (our-mistake = 0); links to
+  // the original via the revision thread, so it stays ONE piece for difficulty.
+  if (jt.set) {
+    const items = (e.setItems || []).filter(it => it && it.jobType && JOB_TYPES[it.jobType]);
+    const lines = [];
+    const sev = e.isRevision ? (SEVERITY[e.revisionSeverity] || SEVERITY.STANDARD) : null;
+    const ourMistake = e.isRevision && e.revisionCause === 'OUR_MISTAKE';
+    let base = 0;
+    items.forEach(it => {
+      const ijt = JOB_TYPES[it.jobType];
+      const r0 = (CUSTOM_RATES && CUSTOM_RATES[it.jobType] != null) ? CUSTOM_RATES[it.jobType] : ijt.rate;
+      const q = Math.max(1, it.quantity || 1);
+      let v = r0 * q;
+      if (ourMistake) v = 0;
+      else if (sev) v = v * (sev.factor != null ? sev.factor : 1.0);
+      base += v;
+      lines.push({ label: `${sev ? sev.label + ' ' : ''}${ijt.short} × ${q}`, val: v, muted: ourMistake });
+    });
+    if (!items.length) lines.push({ label: 'Empty set', val: 0, muted: true });
+    const aoS = SETTINGS.addOn; let addOnS = 0; const aoLabS = [];
+    if (e.conditionBriefIncomplete) { addOnS += aoS; aoLabS.push('Brief'); }
+    if (e.conditionAssetNotProvided) { addOnS += aoS; aoLabS.push('Assets'); }
+    if (e.conditionDeadlineRush) { addOnS += aoS; aoLabS.push('Rush'); }
+    if (addOnS > 0) lines.push({ label: `Add-ons · ${aoLabS.join(', ')}`, val: addOnS });
+    const calculated = base + addOnS;
     const final = (e.manualOverride != null) ? e.manualOverride : calculated;
     return { lines, calculated, final, overridden: e.manualOverride != null };
   }

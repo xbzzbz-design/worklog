@@ -46,7 +46,7 @@ function renderSettings() {
     <div class="set-sec">
       <div class="set-h">Job type rates <span class="set-shared">${ic('users-round')} shared · agree together</span></div>
       <div class="rate-list" id="rateList">
-        ${Object.entries(JOB_TYPES).filter(([k,v])=>!v.quick && !v.motion).map(([k,v])=>{
+        ${Object.entries(JOB_TYPES).filter(([k,v])=>!v.quick && !v.motion && !v.set).map(([k,v])=>{
           const r = CUSTOM_RATES[k] != null ? CUSTOM_RATES[k] : v.rate;
           return `<div class="rate-row">
             <span class="jt-ic sm" style="--jc:${v.color}">${ic(v.icon)}</span>

@@ -209,6 +209,10 @@ function openDetail(id) {
   if (_jt && _jt.timeBased) {
     rows.push(['Kind', (OTHER_KINDS[e.otherKind]||OTHER_KINDS.MEETING).label]);
     rows.push(['Duration', u(e.hours || e.quantity || 1) + ' hours']);
+  } else if (_jt && _jt.set) {
+    rows.push(['Pieces', `${setQty(e)} · ${setSummary(e)}`]);
+  } else if (_jt && _jt.motion) {
+    rows.push(['Scenes', motionSummary(e) || '—']);
   } else {
     rows.push(['Quantity', e.quantity + ' pieces']);
   }
@@ -277,6 +281,7 @@ function openDetail(id) {
       clientId: e.clientId,
       prefilledClient: false,
       setId: e.setId || null,
+      setItems: Array.isArray(e.setItems) ? e.setItems.map(it => ({ jobType: it.jobType, quantity: it.quantity })) : [],
       jobType: e.jobType,
       motionVariant: !!e.motionVariant,
       otherKind: e.otherKind || 'MEETING',

@@ -45,6 +45,7 @@
     revisionSeverity: r.revision_severity,
     revisionCause: r.revision_cause,
     setId: r.set_id || null,
+    setItems: Array.isArray(r.set_items) ? r.set_items : [],
     motionVariant: !!r.motion_variant,
     motionScenes: r.motion_scenes || 0,
     motionSimple: r.motion_simple || 0,
@@ -77,6 +78,7 @@
     revision_severity: e.isRevision ? (e.revisionSeverity || 'STANDARD') : null,
     revision_cause: e.isRevision ? e.revisionCause : null,
     set_id: e.setId || null,
+    set_items: (e.jobType === 'PHOTOSET' && Array.isArray(e.setItems)) ? e.setItems : null,
     motion_variant: !!e.motionVariant,
     motion_scenes: 0, // legacy column — new entries use the tier columns below
     motion_simple: e.motionSimple || 0,
