@@ -136,6 +136,24 @@ function wireEntry(root) {
   const mReason = $('#mCustomReason');
   if (mReason) mReason.addEventListener('input', () => { draft.motionCustomReason = mReason.value; saveDraft(); });
 
+  /* --- PHOTO SET cart (rebinds itself after each change) --- */
+  function wireSet() {
+    const builder = $('#setBuilder');
+    if (!builder) return;
+    const rerender = () => { builder.innerHTML = renderSetCart(); refreshIcons(); wireSet(); updateSummary(); saveDraft(); };
+    const add = $('#setAdd');
+    if (add) add.addEventListener('click', () => { draft.setItems = draft.setItems || []; const def = setPieceTypes()[0]; draft.setItems.push({ jobType: def ? def[0] : 'SINGLE_BANNER', quantity: 1 }); rerender(); });
+    builder.querySelectorAll('.set-type').forEach(sel => sel.addEventListener('change', () => {
+      draft.setItems[+sel.dataset.setI].jobType = sel.value; saveDraft(); updateSummary();
+      const t = $('#setTotal'); if (t) t.textContent = u(calcUnits(draft).final);
+    }));
+    builder.querySelectorAll('.set-step .step-btn').forEach(b => b.addEventListener('click', () => {
+      const it = draft.setItems[+b.dataset.setI]; it.quantity = Math.max(1, (it.quantity || 1) + parseInt(b.dataset.sd)); rerender();
+    }));
+    builder.querySelectorAll('[data-set-del]').forEach(b => b.addEventListener('click', () => { draft.setItems.splice(+b.dataset.setDel, 1); rerender(); }));
+  }
+  wireSet();
+
   /* --- STEP 6 conditions --- */
   $$('#condChecks .check').forEach(c => c.addEventListener('click', () => {
     if (c.classList.contains('disabled')) { toast('Already counted in the revision cause', 'info'); return; }
@@ -260,13 +278,11 @@ function wireEntry(root) {
     if (draft.manualOverride != null && !draft.manualOverrideReason.trim()) { toast('Override needs a reason', 'info'); $('#ovReason').focus(); return; }
     if (draft.jobType === 'MOTION' && motionUnitsOf(draft) <= 0) { toast('Add at least one motion scene', 'info'); return; }
     if (draft.jobType === 'MOTION' && (draft.motionCustom||0) > 0 && !(draft.motionCustomReason||'').trim()) { toast('Complex motion needs a reason', 'info'); const r=$('#mCustomReason'); if (r) r.focus(); return; }
+    if (draft.jobType === 'PHOTOSET' && (!draft.setItems || !draft.setItems.length)) { toast('Add at least one piece to the set', 'info'); return; }
 
     const eff = Object.assign({}, draft, { flagNote: draft.flagNote });
     if (eff.jobType !== 'MOTION') { eff.motionSimple = 0; eff.motionStandard = 0; eff.motionCustom = 0; eff.motionCustomReason = ''; }
-    // a "Save & add another" run shares one set id, so the pieces group into a
-    // single line on the report; editing keeps an existing entry's set id
-    if (stay && !window._setId) window._setId = 'set-' + Date.now().toString(36);
-    eff.setId = window._setId || draft.setId || null;
+    if (eff.jobType !== 'PHOTOSET') eff.setItems = [];
     // keep the original date when editing / completing a backdated entry; otherwise today
     eff.date = draft.date || new Date().toISOString().slice(0, 10);
     eff._c = calcUnits(eff);

@@ -46,6 +46,18 @@ function openPdfPreview() {
 
   /* ---- PAGE 2: daily log ---- */
   const singleRow = (e) => {
+    const _sjt = JOB_TYPES[e.jobType];
+    if (_sjt && _sjt.set) {
+      const scope = isScope(e);
+      return `<tr class="setrow ${scope?'scope':''}">
+        <td><b>${clientName(e.clientId)}</b> ${e.isStarred?'★':''}${e.isFlagged&&!scope?' ⚑':''}</td>
+        <td><b>Set · ${(e.setItems||[]).length} pieces</b></td>
+        <td>${setQty(e)}</td>
+        <td>${e.isRevision?`Rev ${SEVERITY[e.revisionSeverity]?.label||''}`:'Set'}${scope?' ⚠':''}</td>
+        <td>—</td>
+        <td class="r tnum"><b>${u(e._c.final)}</b></td>
+      </tr><tr class="noterow setnote"><td colspan="6">↳ ${setSummary(e)}</td></tr>${e.note?`<tr class="noterow"><td colspan="6">↳ ${e.note}</td></tr>`:''}`;
+    }
     const c = e._c;
     const addons = [];
     if (e.conditionBriefIncomplete) addons.push('Brief');

@@ -8,7 +8,7 @@ function freshDraft() {
   // count as an unsaved draft (prefilledClient) until you actually touch the form
   const last = (typeof lastClientId === 'function') ? lastClientId() : null;
   return {
-    clientId: last, prefilledClient: !!last, jobType: null, quantity: 1, motionVariant: false,
+    clientId: last, prefilledClient: !!last, jobType: null, quantity: 1, motionVariant: false, setItems: [],
     isRevision: false, revisionRound: 1, revisionSeverity: 'STANDARD', revisionCause: null,
     motionSimple: 0, motionStandard: 0, motionCustom: 0, motionCustomReason: '',
     conditionBriefIncomplete: false, conditionAssetNotProvided: false, conditionDeadlineRush: false,
@@ -23,6 +23,10 @@ function freshDraft() {
 function isTimeBased() { return draft.jobType && JOB_TYPES[draft.jobType] && JOB_TYPES[draft.jobType].timeBased; }
 // is the currently-selected job the Motion type?
 function isMotion() { return draft.jobType && JOB_TYPES[draft.jobType] && JOB_TYPES[draft.jobType].motion; }
+// is the currently-selected job a Photo set?
+function isSet() { return draft.jobType && JOB_TYPES[draft.jobType] && JOB_TYPES[draft.jobType].set; }
+// piece types that can go inside a set (no meeting/motion/quick/set)
+function setPieceTypes() { return Object.entries(JOB_TYPES).filter(([k,v])=>!v.timeBased && !v.motion && !v.quick && !v.set); }
 
 function draftCalc() {
   const eff = Object.assign({}, draft);
@@ -31,17 +35,38 @@ function draftCalc() {
   return calcUnits(eff);
 }
 
+// photo-set cart markup (rows of piece type × quantity)
+function renderSetCart() {
+  const items = draft.setItems || [];
+  const opts = setPieceTypes();
+  const rows = items.map((it, i) => `
+    <div class="set-row">
+      <select class="set-type" data-set-i="${i}">
+        ${opts.map(([k,v])=>`<option value="${k}" ${it.jobType===k?'selected':''}>${v.label} · ${u(v.rate)}</option>`).join('')}
+      </select>
+      <div class="set-step"><button class="step-btn" data-set-i="${i}" data-sd="-1">${ic('minus')}</button><b class="tnum">${it.quantity||1}</b><button class="step-btn" data-set-i="${i}" data-sd="1">${ic('plus')}</button></div>
+      <button class="set-del" data-set-del="${i}">${ic('x')}</button>
+    </div>`).join('');
+  const total = (draft.jobType === 'PHOTOSET') ? calcUnits(draft).final : 0;
+  const qty = items.reduce((s, it) => s + (it.quantity || 1), 0);
+  return `${rows || `<div class="set-empty">No pieces yet — add the first one.</div>`}
+    <button class="set-add" id="setAdd">${ic('plus')} Add a piece</button>
+    <div class="set-total">${qty} piece${qty===1?'':'s'} · <b class="tnum" id="setTotal">${u(total)}</b> units${draft.isRevision?' (after revision)':''}</div>`;
+}
+
 // toggle the form between piece-based, time-based and motion modes
 function syncJobMode(root) {
   root = root || document;
   const tb = isTimeBased();
   const mo = isMotion();
+  const st = isSet();
   const show = (id, on) => { const el = root.querySelector(id); if (el) el.hidden = !on; };
   show('#otherKind', tb);
-  show('#qtyStep', !mo);          // quantity (pieces) or duration (hours); motion uses tiers instead
+  show('#qtyStep', !mo && !st);   // quantity (pieces) or duration (hours); motion/set use their own builders
   show('#motionVariantRow', !!(draft.jobType && JOB_TYPES[draft.jobType] && JOB_TYPES[draft.jobType].hasMotionVariant)); // still/motion choice for variation & adaptation
   show('#motionStep', mo);        // motion tier builder
-  show('#revStep', !tb);          // revision/edit applies to piece + motion (not meetings)
+  show('#setStep', st);           // photo-set cart
+  show('#revStep', !tb);          // revision/edit applies to pieces, motion & sets (not meetings)
   show('#honestyNote', tb);
   const qtyLabel = root.querySelector('#qtyLabel');
   const qtyUnit = root.querySelector('#qtyUnit');
@@ -56,7 +81,7 @@ const DRAFT_KEY = 'wl_draft';
 function isDraftDirty(d) {
   const clientDirty = d && d.clientId && !d.prefilledClient; // a pre-filled suggestion isn't a real draft
   return !!(d && (clientDirty || d.jobType || d.note || d.driveLink || d.snap || d.isFlagged ||
-    d.isStarred || d.isRevision || d.motionVariant || (d.motionSimple||0)>0 || (d.motionStandard||0)>0 || (d.motionCustom||0)>0 ||
+    d.isStarred || d.isRevision || d.motionVariant || (d.setItems&&d.setItems.length>0) || (d.motionSimple||0)>0 || (d.motionStandard||0)>0 || (d.motionCustom||0)>0 ||
     d.conditionBriefIncomplete || d.conditionAssetNotProvided || d.conditionDeadlineRush || (d.quantity||1) > 1 || d.manualOverride != null));
 }
 function saveDraft() {
@@ -117,7 +142,7 @@ function renderEntry() {
           <button class="jt-card ${draft.jobType===k?'on':''} ${v.timeBased?'tb':''}" data-jt="${k}">
             <span class="jt-ic" style="--jc:${v.color}">${ic(v.icon)}</span>
             <span class="jt-name">${v.label}</span>
-            ${v.motion ? `<span class="jt-rate">tiered</span>` : `<span class="jt-rate tnum">${u(v.rate)}<small>/${v.timeBased?'hr':'pc'}</small></span>`}
+            ${v.motion || v.set ? `<span class="jt-rate">${v.set?'cart':'tiered'}</span>` : `<span class="jt-rate tnum">${u(v.rate)}<small>/${v.timeBased?'hr':'pc'}</small></span>`}
           </button>`).join('')}
       </div>
     </div>
@@ -198,6 +223,12 @@ function renderEntry() {
       </div>
     </div>
 
+    <!-- STEP 3 (PHOTO SET) CART -->
+    <div class="fstep" id="setStep">
+      <div class="fstep-h"><span class="num">3</span><label>What's in the set?</label><span class="opt-tag">add each piece</span></div>
+      <div id="setBuilder">${renderSetCart()}</div>
+    </div>
+
     <!-- STEP 6 CONDITIONS -->
     <div class="fstep">
       <div class="fstep-h"><span class="num">5</span><label>Conditions</label><span class="opt-tag">+${u(SETTINGS.addOn)} each</span></div>
@@ -263,9 +294,9 @@ function renderEntry() {
       </div>
     </div>
 
-    ${(window._setTally && window._setTally.count>0)?`<div class="set-tally" id="setTally">${ic('layers')}<span>This set so far · <b>${window._setTally.count} piece${window._setTally.count>1?'s':''}</b> · <b class="tnum">${u(window._setTally.units)}</b> units</span><button id="setDone" class="set-done">Done</button></div>`:''}
+    ${(window._setTally && window._setTally.count>0)?`<div class="set-tally" id="setTally">${ic('layers')}<span>Logged this run · <b>${window._setTally.count} piece${window._setTally.count>1?'s':''}</b> · <b class="tnum">${u(window._setTally.units)}</b> units</span><button id="setDone" class="set-done">Done</button></div>`:''}
     <button class="btn full lg save-btn" id="saveBtn">${ic('check')} Save entry</button>
-    <button class="btn ghost full save-add-btn" id="saveAddBtn">${ic('plus')} Save &amp; add another to this set</button>
+    <button class="btn ghost full save-add-btn" id="saveAddBtn">${ic('plus')} Save &amp; add another</button>
   </div>`;
 }
 
