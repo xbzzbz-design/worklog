@@ -263,6 +263,10 @@ function wireEntry(root) {
 
     const eff = Object.assign({}, draft, { flagNote: draft.flagNote });
     if (eff.jobType !== 'MOTION') { eff.motionSimple = 0; eff.motionStandard = 0; eff.motionCustom = 0; eff.motionCustomReason = ''; }
+    // a "Save & add another" run shares one set id, so the pieces group into a
+    // single line on the report; editing keeps an existing entry's set id
+    if (stay && !window._setId) window._setId = 'set-' + Date.now().toString(36);
+    eff.setId = window._setId || draft.setId || null;
     // keep the original date when editing / completing a backdated entry; otherwise today
     eff.date = draft.date || new Date().toISOString().slice(0, 10);
     eff._c = calcUnits(eff);
@@ -310,6 +314,7 @@ function wireEntry(root) {
     }
 
     if (window._setTally) window._setTally = null;
+    window._setId = null; // set finished
     toast(savedMessage(eff._c.final));
     draft = freshDraft();
     setTimeout(()=> { go('home'); if (achieved.length) setTimeout(()=>celebrate(achieved[0]), 500); }, 650);
@@ -318,7 +323,7 @@ function wireEntry(root) {
   const saveAdd = $('#saveAddBtn');
   if (saveAdd) saveAdd.addEventListener('click', () => doSave(true, saveAdd));
   const setDone = $('#setDone');
-  if (setDone) setDone.addEventListener('click', () => { window._setTally = null; draft = freshDraft(); go('home'); });
+  if (setDone) setDone.addEventListener('click', () => { window._setTally = null; window._setId = null; draft = freshDraft(); go('home'); });
 
   // restore snapshot preview + cause note + thread picker for a resumed draft
   if (draft.snap) {
