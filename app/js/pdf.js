@@ -225,10 +225,28 @@ function exportPdf(docHtml, title) {
       <div class="print-hint">${title} <button onclick="window.print()">Save as PDF</button></div>
       <div class="pdf-doc">${docHtml}</div>
       <script>
-        window.addEventListener('load', function(){
-          // give the stylesheets a tick to apply, then open the print dialog
-          setTimeout(function(){ try { window.focus(); window.print(); } catch(e){} }, 350);
-        });
+        // Wait for evidence images AND web fonts before printing — otherwise the
+        // saved PDF can drop thumbnails or use fallback fonts (so it wouldn't
+        // match the on-screen preview).
+        (function(){
+          var printed = false;
+          function printNow(){ if (printed) return; printed = true; try { window.focus(); window.print(); } catch(e){} }
+          function whenImagesReady(cb){
+            var imgs = Array.prototype.slice.call(document.images);
+            var left = imgs.filter(function(im){ return !im.complete; }).length;
+            if (!left) return cb();
+            imgs.forEach(function(im){
+              if (im.complete) return;
+              var tick = function(){ if (--left <= 0) cb(); };
+              im.addEventListener('load', tick); im.addEventListener('error', tick);
+            });
+          }
+          window.addEventListener('load', function(){
+            var fonts = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+            fonts.then(function(){ whenImagesReady(function(){ setTimeout(printNow, 150); }); });
+            setTimeout(printNow, 4000); // safety net so it never hangs
+          });
+        })();
       <\/script>
     </body></html>`;
 

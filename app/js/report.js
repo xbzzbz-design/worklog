@@ -26,7 +26,8 @@ const [defaultFrom, defaultTo] = monthBounds(0);
 let reportRange = { from: defaultFrom, to: defaultTo, label: 'This month' };
 
 function rangeStats(from, to) {
-  const es = rangeEntries(from, to);
+  // exclude unfinished Quick-log drafts (no client yet) — they'd show as "Unknown"
+  const es = rangeEntries(from, to).filter(e => !needsDetail(e));
   const total = sum(es, e=>e._c.final);
   const newWork = sum(es.filter(e=>!e.isRevision), e=>e._c.final);
   const revWork = sum(es.filter(e=>e.isRevision), e=>e._c.final);
