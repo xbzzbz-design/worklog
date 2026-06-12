@@ -51,6 +51,7 @@ function go(name) {
   } else {
     window._pendingEntryDate = null;
     window._setTally = null; // leaving the form ends the current "set"
+    window._setId = null;
   }
   const mount = activeMount();
   const screen = SCREENS[name];
@@ -275,6 +276,7 @@ function openDetail(id) {
       date: e.date,
       clientId: e.clientId,
       prefilledClient: false,
+      setId: e.setId || null,
       jobType: e.jobType,
       motionVariant: !!e.motionVariant,
       otherKind: e.otherKind || 'MEETING',

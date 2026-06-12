@@ -15,6 +15,8 @@ const CHANGELOG = [
       'Paste or drag a screenshot right onto a log (no saving the file first)',
       'Motion is now its own job type, scored by scene complexity (Simple / Standard / Complex)',
       'Variation & Adaptation can be marked Still or Motion — a motion version counts double',
+      'Log a mixed photo set with “Save & add another” — it collapses to one line on the report so an over-scope set stands out',
+      'Client difficulty now weights revisions by severity, cause and how many rounds the same piece took (minor tweaks barely count; our mistakes don’t)',
       '“Shoot / on location” added for time-based work',
       'Team view now shows a load pulse — Healthy / Send snacks / Heavy week — instead of a scoreboard, and skips anyone who hasn’t logged so no one looks idle',
       'Help board shows a red badge when a teammate needs a hand',

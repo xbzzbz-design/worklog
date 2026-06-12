@@ -45,37 +45,61 @@ function openPdfPreview() {
   `);
 
   /* ---- PAGE 2: daily log ---- */
+  const singleRow = (e) => {
+    const c = e._c;
+    const addons = [];
+    if (e.conditionBriefIncomplete) addons.push('Brief');
+    if (e.conditionAssetNotProvided) addons.push('Assets');
+    if (e.conditionDeadlineRush) addons.push('Rush');
+    if (hasMotion(e) && e.jobType !== 'MOTION') addons.push(`Motion +${u(motionUnitsOf(e))}`);
+    const scope = isScope(e);
+    const _jt = JOB_TYPES[e.jobType] || { short: e.jobType };
+    const _tb = _jt && _jt.timeBased;
+    const qtyCell = _tb ? `${u(e.hours||e.quantity||1)}h` : e.quantity;
+    const typeCell = _tb ? (OTHER_KINDS[e.otherKind]||OTHER_KINDS.MEETING).label : (e.isRevision?`Rev ${SEVERITY[e.revisionSeverity]?.label||''}`:'New');
+    return `<tr class="${scope?'scope':''}">
+      <td>${clientName(e.clientId)} ${e.isStarred?'★':''}${e.isFlagged&&!scope?' ⚑':''}</td>
+      <td>${_jt.short}</td>
+      <td>${qtyCell}</td>
+      <td>${typeCell}${scope?' ⚠':''}</td>
+      <td>${addons.join(', ')||'—'}</td>
+      <td class="r tnum"><b>${u(c.final)}</b>${c.overridden?`<i class="ov-note">manual · calc ${u(c.calculated)}</i>`:''}</td>
+    </tr>${e.note?`<tr class="noterow"><td colspan="6">↳ ${e.note}</td></tr>`:''}`;
+  };
+  // a set logged together collapses into one line — its combined units make an
+  // over-scope set obvious without anyone typing a quota
+  const setRow = (arr) => {
+    const totalU = sum(arr, e=>e._c.final);
+    const totalQ = arr.reduce((s2,e)=>{ const jt=JOB_TYPES[e.jobType]; return s2 + (jt&&jt.timeBased?0:(e.quantity||1)); }, 0);
+    const anyScope = arr.some(isScope), anyFlag = arr.some(e=>e.isFlagged), anyStar = arr.some(e=>e.isStarred);
+    const pieces = arr.map(e=>{ const jt=JOB_TYPES[e.jobType]||{short:e.jobType}; return `${jt.short}${jt.timeBased?'':'×'+(e.quantity||1)}`; }).join(', ');
+    return `<tr class="setrow ${anyScope?'scope':''}">
+      <td><b>${clientName(arr[0].clientId)}</b> ${anyStar?'★':''}${anyFlag&&!anyScope?' ⚑':''}</td>
+      <td><b>Set · ${arr.length} pieces</b></td>
+      <td>${totalQ}</td>
+      <td>Set${anyScope?' ⚠':''}</td>
+      <td>—</td>
+      <td class="r tnum"><b>${u(totalU)}</b></td>
+    </tr><tr class="noterow setnote"><td colspan="6">↳ ${pieces}</td></tr>`;
+  };
   let dailyHtml = `<div class="pdf-sec-t">Daily log</div>`;
   s.dayList.slice().reverse().forEach(([date]) => {
     const dayEs = s.es.filter(e=>e.date===date);
     const dt = sum(dayEs, e=>e._c.final);
+    const seenSets = new Set();
+    const rows = dayEs.map(e => {
+      if (e.setId) {
+        if (seenSets.has(e.setId)) return '';
+        const arr = dayEs.filter(x => x.setId === e.setId);
+        if (arr.length > 1) { seenSets.add(e.setId); return setRow(arr); }
+      }
+      return singleRow(e);
+    }).join('');
     dailyHtml += `<div class="pdf-day">
       <div class="pdf-day-h"><b>${fmtDate(date)}</b><span class="tnum">${u(dt)} units</span></div>
       <table class="pdf-log">
         <thead><tr><th>Client</th><th>Job</th><th>Qty</th><th>Type</th><th>Add-ons</th><th class="r">Units</th></tr></thead>
-        <tbody>
-          ${dayEs.map(e=>{
-            const c = e._c;
-            const addons = [];
-            if (e.conditionBriefIncomplete) addons.push('Brief');
-            if (e.conditionAssetNotProvided) addons.push('Assets');
-            if (e.conditionDeadlineRush) addons.push('Rush');
-            if (hasMotion(e) && e.jobType !== 'MOTION') addons.push(`Motion +${u(motionUnitsOf(e))}`);
-            const scope = isScope(e);
-            const _jt = JOB_TYPES[e.jobType];
-            const _tb = _jt && _jt.timeBased;
-            const qtyCell = _tb ? `${u(e.hours||e.quantity||1)}h` : e.quantity;
-            const typeCell = _tb ? (OTHER_KINDS[e.otherKind]||OTHER_KINDS.MEETING).label : (e.isRevision?`Rev ${SEVERITY[e.revisionSeverity]?.label||''}`:'New');
-            return `<tr class="${scope?'scope':''}">
-              <td>${clientName(e.clientId)} ${e.isStarred?'★':''}${e.isFlagged&&!scope?' ⚑':''}</td>
-              <td>${_jt.short}</td>
-              <td>${qtyCell}</td>
-              <td>${typeCell}${scope?' ⚠':''}</td>
-              <td>${addons.join(', ')||'—'}</td>
-              <td class="r tnum"><b>${u(c.final)}</b>${c.overridden?`<i class="ov-note">manual · calc ${u(c.calculated)}</i>`:''}</td>
-            </tr>${e.note?`<tr class="noterow"><td colspan="6">↳ ${e.note}</td></tr>`:''}`;
-          }).join('')}
-        </tbody>
+        <tbody>${rows}</tbody>
       </table>
     </div>`;
   });

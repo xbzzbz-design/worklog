@@ -168,3 +168,8 @@
 .evid-empty { text-align: center; color: #aaa39a; padding: 24px; font-style: italic; font-size: 11px; }
 .pdf-footnote { font-size: 9.5px; color: #9a9389; line-height: 1.5; margin-top: 16px; font-style: italic; }
 .pdf-log .empty { text-align: center; color: #aaa39a; padding: 20px; font-style: italic; }
+
+/* a grouped set collapses to one bold line so its combined units stand out */
+.pdf-log tr.setrow td { background: #f4f2fb; border-bottom: none; }
+.pdf-log tr.setrow td b { color: var(--primary); }
+.pdf-log tr.noterow.setnote td { background: #f4f2fb; padding-top: 0; color: #8a8379; }
