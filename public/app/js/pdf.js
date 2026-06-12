@@ -177,6 +177,13 @@ function openPdfPreview() {
   };
   requestAnimationFrame(fitPdf);
   setTimeout(fitPdf, 60);
+  // evidence images load after first paint and change the document height —
+  // re-fit when they arrive so the appendix doesn't overflow the preview
+  modal.querySelectorAll('.pdf-doc img').forEach(im => {
+    if (!im.complete) { im.addEventListener('load', fitPdf); im.addEventListener('error', fitPdf); }
+  });
+  setTimeout(fitPdf, 400);
+  setTimeout(fitPdf, 1000);
   window.addEventListener('resize', fitPdf);
   modal._fitPdf = fitPdf;
 
@@ -193,6 +200,9 @@ function exportPdf(docHtml, title) {
   const cssBase = location.href; // resolves css/*.css relative to WorkLog.html
   const href = (f) => new URL('css/' + f, cssBase).href;
   const printCss = `
+    /* keep background colours (chart bars, KPI tints, badges) — browsers strip
+       them from print by default, which made the chart vanish in the PDF */
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     @page { size: A4; margin: 0; }
     html, body { margin: 0; padding: 0; background: #fff; }
     .pdf-doc { width: auto; gap: 0; transform: none !important; display: block; }
