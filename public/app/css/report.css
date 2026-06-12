@@ -92,7 +92,9 @@
 
 .pdf-page {
   background: white; border-radius: 4px; box-shadow: 0 10px 40px rgba(0,0,0,.25);
-  width: 760px; height: 1074px; padding: 48px 52px 0; display: flex; flex-direction: column;
+  /* min-height (not fixed) so long sections grow instead of overflowing the box —
+     this is what made the on-screen preview clip while the saved PDF flowed fine */
+  width: 760px; min-height: 1074px; padding: 48px 52px 36px; display: flex; flex-direction: column;
   color: oklch(0.3 0.012 60); position: relative; flex: 0 0 auto;
 }
 .pdf-body { flex: 1; min-height: 0; }
