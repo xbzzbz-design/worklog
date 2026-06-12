@@ -18,7 +18,7 @@ const JOB_TYPES = {
   INFOGRAPHIC:    { label: 'Infographic', short: 'Infographic', rate: 2.0, color: 'var(--bad)', icon: 'bar-chart-3' },
   MOTION:         { label: 'Motion', short: 'Motion', rate: 0, color: 'oklch(0.55 0.17 305)', icon: 'clapperboard', motion: true },
   PHOTOSET:       { label: 'Photo set', short: 'Set', rate: 0, color: 'oklch(0.55 0.12 200)', icon: 'layout-grid', set: true },
-  OTHER:          { label: 'Meeting / Other', short: 'Meeting', rate: 1.0, color: 'oklch(0.55 0.05 60)', icon: 'users', timeBased: true },
+  OTHER:          { label: 'Meeting / Shoot', short: 'Meeting', rate: 1.0, color: 'oklch(0.55 0.05 60)', icon: 'users', timeBased: true },
   // Quick log — a units-only placeholder logged in seconds; client / job type
   // get filled in later. Never offered in the job-type picker (quick:true).
   QUICK:          { label: 'Quick log', short: 'Quick log', rate: 1.0, color: 'oklch(0.62 0.03 280)', icon: 'zap', quick: true },

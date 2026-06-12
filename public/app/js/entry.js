@@ -35,23 +35,25 @@ function draftCalc() {
   return calcUnits(eff);
 }
 
-// photo-set cart markup (rows of piece type × quantity)
+// photo-set quantity helpers (qty per piece type)
+function setGetQty(k) { const it = (draft.setItems || []).find(x => x.jobType === k); return it ? it.quantity : 0; }
+function setSetQty(k, q) {
+  draft.setItems = draft.setItems || [];
+  const i = draft.setItems.findIndex(x => x.jobType === k);
+  if (q <= 0) { if (i >= 0) draft.setItems.splice(i, 1); }
+  else if (i >= 0) draft.setItems[i].quantity = q;
+  else draft.setItems.push({ jobType: k, quantity: q });
+}
+// photo-set builder — a stepper per piece type (like Motion), no add-to-cart fuss
 function renderSetCart() {
-  const items = draft.setItems || [];
-  const opts = setPieceTypes();
-  const rows = items.map((it, i) => `
-    <div class="set-row">
-      <select class="set-type" data-set-i="${i}">
-        ${opts.map(([k,v])=>`<option value="${k}" ${it.jobType===k?'selected':''}>${v.label} · ${u(v.rate)}</option>`).join('')}
-      </select>
-      <div class="set-step"><button class="step-btn" data-set-i="${i}" data-sd="-1">${ic('minus')}</button><b class="tnum">${it.quantity||1}</b><button class="step-btn" data-set-i="${i}" data-sd="1">${ic('plus')}</button></div>
-      <button class="set-del" data-set-del="${i}">${ic('x')}</button>
+  const rows = setPieceTypes().map(([k, v]) => `
+    <div class="mtier">
+      <div class="mtier-info"><b>${v.label} <span class="mtier-rate">${u(v.rate)}/pc</span></b></div>
+      <div class="mtier-step"><button class="step-btn" data-setk="${k}" data-sd="-1">${ic('minus')}</button><b class="tnum">${setGetQty(k)}</b><button class="step-btn" data-setk="${k}" data-sd="1">${ic('plus')}</button></div>
     </div>`).join('');
   const total = (draft.jobType === 'PHOTOSET') ? calcUnits(draft).final : 0;
-  const qty = items.reduce((s, it) => s + (it.quantity || 1), 0);
-  return `${rows || `<div class="set-empty">No pieces yet — add the first one.</div>`}
-    <button class="set-add" id="setAdd">${ic('plus')} Add a piece</button>
-    <div class="set-total">${qty} piece${qty===1?'':'s'} · <b class="tnum" id="setTotal">${u(total)}</b> units${draft.isRevision?' (after revision)':''}</div>`;
+  const qty = (draft.setItems || []).reduce((s, it) => s + (it.quantity || 0), 0);
+  return `${rows}<div class="set-total">${qty} piece${qty===1?'':'s'} · <b class="tnum" id="setTotal">${u(total)}</b> units${draft.isRevision?' (after revision)':''}</div>`;
 }
 
 // toggle the form between piece-based, time-based and motion modes

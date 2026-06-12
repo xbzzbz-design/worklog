@@ -97,6 +97,7 @@ const EXAMPLES = [
   { icon:'bar-chart-3', title:'A set of infographics', desc:'6 data-heavy infographic slides.', e:{ jobType:'INFOGRAPHIC', quantity:6 } },
   { icon:'clapperboard', title:'Motion · 2 simple scenes', desc:'Two still-image, text-motion scenes.', e:{ jobType:'MOTION', motionSimple:2 } },
   { icon:'film', title:'Motion · 2 AI-video scenes', desc:'Two AI-generated video scenes.', e:{ jobType:'MOTION', motionStandard:2 } },
+  { icon:'layout-grid', title:'A photo set (watch the scope)', desc:'8 pieces in one set — but only 4 were contracted. One line, combined units, so the overage is obvious.', e:{ jobType:'PHOTOSET', setItems:[{jobType:'SINGLE_BANNER',quantity:1},{jobType:'INFOGRAPHIC',quantity:2},{jobType:'VARIATION_SWAP',quantity:5}] } },
   { icon:'flame', title:'A hard-time client', desc:'2 infographics — no brief, you sourced assets, same-day rush.', e:{ jobType:'INFOGRAPHIC', quantity:2, conditionBriefIncomplete:true, conditionAssetNotProvided:true, conditionDeadlineRush:true } },
   { icon:'rotate-ccw', title:'A scope-creep redo', desc:'New direction after approval — full banner redo ×2.', e:{ jobType:'SINGLE_BANNER', quantity:2, isRevision:true, revisionRound:3, revisionSeverity:'MAJOR', revisionCause:'SCOPE_CREEP' } },
   { icon:'shield-check', title:'Our own mistake', desc:'We shipped a typo — re-export ×3. Honest = no credit.', e:{ jobType:'SINGLE_BANNER', quantity:3, isRevision:true, revisionSeverity:'STANDARD', revisionCause:'OUR_MISTAKE' } },
