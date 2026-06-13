@@ -6,6 +6,19 @@
 
 const CHANGELOG = [
   {
+    id: '2026-06-13',
+    date: 'June 13, 2026',
+    title: 'Logging that gives something back',
+    lines: [
+      'A private “We see you” on Home — the effort that usually goes unnoticed (days off worked, revisions absorbed, hands lent), recognised just for you and never ranked',
+      'A Team wall to send the whole team a note — solidarity, thanks, a small win — no reactions or scores, so no one is ever singled out',
+      'Much faster logging: a sticky Save bar (no scrolling), tap a job-type card again to +1, optional details tucked away, and your most-used type pre-filled per client',
+      'New “Photo set” job type — add each piece in one cart; an over-scope set stands out as one line on the report',
+      'Working a weekend or public holiday now adds an automatic bonus unit',
+      'Team view: a “this week, together” summary (units, pieces, by client), and the week now reads Mon–Fri',
+    ],
+  },
+  {
     id: '2026-06-10',
     date: 'June 10, 2026',
     title: 'Faster logging & a fairer team view',
