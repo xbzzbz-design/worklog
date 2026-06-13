@@ -279,3 +279,11 @@ body[data-theme="dark"] .bal-msg.flip { background: var(--paper-2); border-color
 .wk-cnum { flex: none; font-size: 13px; color: var(--muted); font-weight: 600; }
 .wk-cnum b { color: var(--ink); }
 .wk-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 16px; font-style: italic; }
+
+/* collapsible by-client breakdown toggle */
+.wk-more { display: flex; align-items: center; gap: 9px; width: 100%; padding: 12px 14px; margin-bottom: 8px; border: 1px dashed var(--line); border-radius: var(--r); background: var(--paper-2); color: var(--ink-2); font-weight: 700; font-size: 14px; }
+.wk-more:hover { border-color: var(--faint); }
+.wk-more small { color: var(--muted); font-weight: 500; }
+.wk-more svg { width: 16px; height: 16px; }
+.wk-more svg:last-child { margin-left: auto; transition: transform .2s; }
+.wk-more.open svg:last-child { transform: rotate(180deg); }
