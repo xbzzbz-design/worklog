@@ -62,10 +62,10 @@ function renderStats() {
         <div class="sh-lab">units this month${lastTotal?` · ${thisTotal>=lastTotal?'+':''}${Math.round((thisTotal-lastTotal)/lastTotal*100)}% vs ${lastMonthName}`:''}</div>
       </div>
       <div class="sh-grid">
-        <div class="sh-cell"><b class="tnum">${piecesShipped}</b><small>pieces shipped</small></div>
         <div class="sh-cell"><b class="tnum">${u(allTotal)}</b><small>units all-time</small></div>
-        <div class="sh-cell"><b class="tnum">${streak}</b><small>day streak</small></div>
-        <div class="sh-cell"><b class="tnum">${starred}</b><small>portfolio picks</small></div>
+        <div class="sh-cell"><b class="tnum">${thisM.length}</b><small>jobs this month</small></div>
+        <div class="sh-cell"><b class="tnum">${thisM.length?Math.round(thisM.filter(e=>e.isRevision).length/thisM.length*100):0}%</b><small>were revisions</small></div>
+        <div class="sh-cell"><b class="tnum">${thisM.filter(isScope).length}</b><small>scope flags</small></div>
       </div>
     </div>
 
@@ -100,11 +100,6 @@ function renderStats() {
         <div class="absorb-stat"><b class="tnum">${absorbPct}%</b><small>of your month</small></div>
       </div>
       <p class="absorb-note">${ic('shield-check')} ${absorbPct}% of your effort went to changes and scope you didn't create. That's not lost productivity — it's work others' decisions put on you, and it's on the record now.</p>
-    </div>
-
-    <div class="affirm" style="margin-top:24px">
-      <div class="affirm-q">${ic('quote')}</div>
-      <p>${pickAffirmation()}</p>
     </div>
   </div>`;
 }
