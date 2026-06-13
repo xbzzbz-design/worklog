@@ -79,6 +79,11 @@ function wireEntry(root) {
     syncJobMode(root);
     syncJtCount();
     updateSummary();
+    // bring the next thing to fill (quantity / hours / scenes / cart) into view
+    setTimeout(() => {
+      const step = root.querySelector('#qtyStep:not([hidden]), #motionStep:not([hidden]), #setStep:not([hidden])');
+      if (step && step.scrollIntoView) step.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 40);
   }));
 
   /* --- still / motion variant (Variation & Adaptation) --- */
