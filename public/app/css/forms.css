@@ -316,3 +316,11 @@ body[data-mode="mobile"] .desktop-only { display: none; }
   background: var(--primary); color: #fff; font-size: 11px; font-weight: 800;
   display: grid; place-items: center; box-shadow: 0 1px 3px oklch(0.3 0.02 60 / 0.2);
 }
+
+/* hide the floating Quick-log button while logging (you're already on the form) */
+body[data-screen="entry"] .ql-fab { display: none; }
+/* "Start fresh" as a small floating chip by the headline (saves a full banner row) */
+.entry-greet { position: relative; }
+.draft-fresh-btn { position: absolute; top: 0; right: 0; display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--muted); font-size: 12px; font-weight: 700; box-shadow: var(--sh-1); }
+.draft-fresh-btn:hover { color: var(--ink); border-color: var(--faint); }
+.draft-fresh-btn svg { width: 13px; height: 13px; }
