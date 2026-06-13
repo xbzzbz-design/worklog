@@ -208,3 +208,12 @@ body[data-mode="desktop"] .dm-grab { display: none; }
 .wn-list li svg { width: 13px; height: 13px; color: var(--good); flex: none; margin-top: 2px; }
 .wn-actions { display: flex; gap: 10px; }
 .wn-actions .btn { flex: 1; }
+
+/* Quick log — optional client / type tags */
+.ql-tag { margin: 16px 0 4px; text-align: left; }
+.ql-tag-lab { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+.ql-tag-lab span { font-weight: 500; color: var(--faint); }
+.ql-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 8px; }
+.ql-chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
+.ql-chip .av { width: 20px; height: 20px; border-radius: 50%; font-size: 9px; display: grid; place-items: center; font-weight: 800; margin-left: -3px; }
+.ql-chip.on { border-color: var(--primary); background: var(--primary-tint); color: var(--primary-700); }

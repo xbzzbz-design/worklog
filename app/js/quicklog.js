@@ -33,7 +33,7 @@ function qlShiftDate(iso, days) {
 let _qlState = null;
 
 function openQuickLog(presetDate) {
-  _qlState = { units: 0, date: presetDate || new Date().toISOString().slice(0, 10), busy: false };
+  _qlState = { units: 0, date: presetDate || new Date().toISOString().slice(0, 10), busy: false, clientId: null, jobType: null };
   const el = mountOverlay('quickLogSheet');
   el.innerHTML = qlMarkup();
   el.classList.add('open');
@@ -74,8 +74,18 @@ function qlMarkup() {
         <button class="ql-step plus" data-d="1">+1</button>
       </div>
 
+      <div class="ql-tag">
+        <div class="ql-tag-lab">Tag it <span>optional — skip if you're rushing</span></div>
+        ${(() => { const ids = topClientIds(4); return ids.length ? `<div class="ql-chips" id="qlClients">
+          ${ids.map(id => { const c = CLIENTS.find(x => x.id === id); return c ? `<button class="ql-chip" data-qlclient="${id}"><span class="av ${avatarClass(id)}">${clientInitials(id)}</span>${escHtml(c.name)}</button>` : ''; }).join('')}
+        </div>` : ''; })()}
+        <div class="ql-chips" id="qlTypes">
+          ${Object.entries(JOB_TYPES).filter(([k, v]) => !v.quick && !v.motion && !v.set && !v.timeBased).map(([k, v]) => `<button class="ql-chip" data-qltype="${k}">${escHtml(v.short)}</button>`).join('')}
+        </div>
+      </div>
+
       <button class="btn full lg ql-save" id="qlSave" disabled>${ic('zap')} Log <span id="qlSaveN">0</span> units</button>
-      <button class="btn ghost full ql-details" id="qlDetails" disabled>${ic('list-plus')} Add details now</button>
+      <button class="btn ghost full ql-details" id="qlDetails" disabled>${ic('list-plus')} Add full details</button>
     </div>`;
 }
 
@@ -108,6 +118,16 @@ function qlWire(el) {
   num.addEventListener('blur', () => qlSyncUI(el));
   num.addEventListener('keydown', (e) => { if (e.key === 'Enter') { num.blur(); el.querySelector('#qlSave').click(); } });
 
+  // optional tags — single-select client + job type (re-tap to clear)
+  el.querySelectorAll('[data-qlclient]').forEach(b => b.addEventListener('click', () => {
+    const id = b.dataset.qlclient; s.clientId = (s.clientId === id) ? null : id;
+    el.querySelectorAll('[data-qlclient]').forEach(x => x.classList.toggle('on', x.dataset.qlclient === s.clientId));
+  }));
+  el.querySelectorAll('[data-qltype]').forEach(b => b.addEventListener('click', () => {
+    const k = b.dataset.qltype; s.jobType = (s.jobType === k) ? null : k;
+    el.querySelectorAll('[data-qltype]').forEach(x => x.classList.toggle('on', x.dataset.qltype === s.jobType));
+  }));
+
   el.querySelector('#qlSave').addEventListener('click', () => qlCommit(el, false));
   el.querySelector('#qlDetails').addEventListener('click', () => qlCommit(el, true));
 
@@ -122,8 +142,12 @@ async function qlCommit(el, thenDetails) {
   const saveBtn = el.querySelector('#qlSave');
   saveBtn.classList.add('loading');
 
+  // tagged with BOTH client + type → a complete entry; otherwise a units-only
+  // QUICK draft (keeping any client tag so "add details" is pre-filled)
+  const complete = s.clientId && s.jobType;
+  const jt = complete ? s.jobType : 'QUICK';
   const eff = Object.assign(freshDraft(), {
-    clientId: null, jobType: 'QUICK', quantity: s.units,
+    clientId: s.clientId || null, jobType: jt, quantity: 1,
     manualOverride: s.units, manualOverrideReason: 'Quick log', date: s.date,
   });
   eff._c = calcUnits(eff);
@@ -153,7 +177,7 @@ async function qlCommit(el, thenDetails) {
     completeQuickEntry(saved);
     return;
   }
-  toast(`Logged ${u(s.units)} units — add details whenever`, 'good');
+  toast(jt === 'QUICK' ? `Logged ${u(s.units)} units — add details whenever` : `Logged ${u(s.units)} units`, 'good');
   go(currentScreen === 'entry' ? 'home' : currentScreen);
 }
 
