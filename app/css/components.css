@@ -172,3 +172,13 @@
 
 /* standalone "this month" encouragement line (above the pride cards on Home) */
 .month-frame.solo { margin: 0 0 12px; padding: 11px 14px; background: var(--primary-tint); border-radius: var(--r); font-size: 13px; }
+
+/* "We see you" — private effort recognition card (Home) */
+.seen-card { background: linear-gradient(135deg, var(--good-soft), var(--card) 75%); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; margin-bottom: 16px; }
+.seen-head { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: var(--good-ink); margin-bottom: 12px; }
+.seen-head svg { width: 17px; height: 17px; }
+.seen-list { display: flex; flex-direction: column; gap: 10px; }
+.seen-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.seen-list li svg { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--good); }
+.seen-list b { color: var(--ink); }
+.seen-foot { margin-top: 12px; font-size: 11.5px; color: var(--muted); line-height: 1.45; font-style: italic; }

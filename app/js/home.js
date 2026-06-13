@@ -2,6 +2,27 @@
    WorkLog — Home / Dashboard
    ============================================================ */
 
+// "We see you" — private, guaranteed, effort-based recognition from real data.
+// Never compared to anyone; only the things that were actually hard.
+function recognitionFacts() {
+  const MY = myEntries().filter(e => !needsDetail(e));
+  const thisM = MY.filter(e => e.date.startsWith(TODAY.slice(0, 7)));
+  const facts = [];
+  const offDays = new Set(thisM.filter(e => isWeekend(e.date) || isHolidayDate(e.date)).map(e => e.date));
+  if (offDays.size) facts.push({ ic: 'sunrise', text: `You gave up <b>${offDays.size} day${offDays.size>1?'s':''} off</b> this month — that's real, and it's on the record.` });
+  const absorbed = thisM.filter(e => e.isRevision && e.revisionCause !== 'OUR_MISTAKE');
+  if (absorbed.length) facts.push({ ic: 'shield-check', text: `You absorbed <b>${absorbed.length} revision${absorbed.length>1?'s':''}</b> from changes you didn't cause.` });
+  const scope = thisM.filter(isScope);
+  if (scope.length) facts.push({ ic: 'triangle-alert', text: `You carried <b>${scope.length} scope-creep job${scope.length>1?'s':''}</b> beyond the brief.` });
+  const me = (typeof myId === 'function') ? myId() : null;
+  const helped = (typeof HELP_REQUESTS !== 'undefined') ? HELP_REQUESTS.filter(h => h.status === 'resolved' && h.helperId === me).length : 0;
+  if (helped) facts.push({ ic: 'hand-helping', text: `You lent a hand <b>${helped} time${helped>1?'s':''}</b> when a teammate was underwater.` });
+  const dates = new Set(MY.map(e => e.date)); let streak = 0, cur = new Date(TODAY);
+  while (dates.has(cur.toISOString().slice(0, 10))) { streak++; cur.setDate(cur.getDate() - 1); }
+  if (streak >= 3) facts.push({ ic: 'flame', text: `<b>${streak} days</b> logged in a row — you keep showing up.` });
+  return facts;
+}
+
 function renderHome() {
   const todayEntries = entriesOn(TODAY);
   const todayTotal = dayTotal(TODAY);
@@ -123,6 +144,13 @@ function renderHome() {
         <div class="pill">${ic(over?'flame':'check')} ${over?`${u(todayTotal-max)} over your daily max`:`Within your daily max`}</div>
       </div>
     </div>
+
+    <!-- WE SEE YOU (private, effort-based recognition) -->
+    ${(() => { const f = recognitionFacts(); if (!f.length) return ''; return `<div class="seen-card">
+      <div class="seen-head">${ic('eye')}<b>We see you${SETTINGS.userName?`, ${escHtml(SETTINGS.userName.split(' ')[0])}`:''}</b></div>
+      <ul class="seen-list">${f.slice(0,3).map(x=>`<li>${ic(x.ic)}<span>${x.text}</span></li>`).join('')}</ul>
+      <div class="seen-foot">Just for you — not a score, not a ranking. The effort that usually goes unnoticed, noticed.</div>
+    </div>`; })()}
 
     <!-- TODAY ENTRIES -->
     <div class="section-h"><h2>Today's log</h2><span class="link" data-go="report">View report</span></div>
