@@ -169,3 +169,6 @@
 .c3 { background: oklch(0.95 0.05 80); color: var(--warn-ink); }
 .c4 { background: oklch(0.93 0.04 320); color: oklch(0.45 0.13 320); }
 .c5 { background: oklch(0.93 0.04 220); color: oklch(0.44 0.12 230); }
+
+/* standalone "this month" encouragement line (above the pride cards on Home) */
+.month-frame.solo { margin: 0 0 12px; padding: 11px 14px; background: var(--primary-tint); border-radius: var(--r); font-size: 13px; }

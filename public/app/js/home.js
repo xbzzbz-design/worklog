@@ -149,28 +149,29 @@ function renderHome() {
       </div>
     </div>
 
-    <!-- STATS -->
-    <div class="section-h"><h2>This month</h2><span class="link" data-go="stats">All my stats</span></div>
+    <!-- THIS MONTH (pride snapshot — the analytical detail lives in My stats) -->
+    <div class="section-h"><h2>This month, so far</h2><span class="link" data-go="stats">Full stats →</span></div>
+    <div class="month-frame solo">${ic(monthFrame.ic)} ${monthFrame.word}</div>
     <div class="stats">
       <div class="stat accent">
-        <div class="lab">${ic('layers')} Total workload</div>
-        <div class="val tnum">${u(thisTotal)}<span class="u"> units</span></div>
-        <div class="month-frame">${ic(monthFrame.ic)} ${monthFrame.word}</div>
-      </div>
-      <div class="stat">
         <div class="lab">${ic('package-check')} Shipped</div>
         <div class="val tnum">${piecesShipped}<span class="u"> pcs</span></div>
-        <div class="cap">delivered across ${clientsServed} clients</div>
+        <div class="cap">across ${clientsServed} client${clientsServed===1?'':'s'}</div>
       </div>
       <div class="stat">
-        <div class="lab">${ic('flame')} Logging streak</div>
+        <div class="lab">${ic('flame')} Streak</div>
         <div class="val tnum">${streak}<span class="u"> day${streak===1?'':'s'}</span></div>
-        <div class="cap">${streak>=5?'You’re on a roll ✨':'Keep it going'}</div>
+        <div class="cap">${streak>=5?'On a roll ✨':'Keep it going'}</div>
       </div>
-      <div class="stat ${scopeCount>0?'warnbg':''}">
-        <div class="lab">${ic('triangle-alert')} Scope flags</div>
-        <div class="val tnum">${scopeCount}</div>
-        <div class="cap">${scopeCount>0?'Logged as evidence':'None this month'}</div>
+      <div class="stat">
+        <div class="lab">${ic('star')} Portfolio</div>
+        <div class="val tnum">${starred.length}<span class="u"> saved</span></div>
+        <div class="cap">your proudest work</div>
+      </div>
+      <div class="stat">
+        <div class="lab">${ic('award')} Best day</div>
+        <div class="val tnum">${best?u(best[1]):'0'}<span class="u"> u</span></div>
+        <div class="cap">${best?bestDate:'log to begin'}</div>
       </div>
     </div>
 
