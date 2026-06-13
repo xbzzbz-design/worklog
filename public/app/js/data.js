@@ -589,7 +589,15 @@ const URGENCY = {
 // team-level kindness count (collective, never per-person ranked)
 function timesHelpedThisMonth() { return HELP_REQUESTS.filter(h=>h.status==='resolved').length; }
 
+// team wall — short collective messages TO the team (solidarity, encouragement).
+// No reactions, no counts, no naming-and-praising — so no one is a "social defendant".
+let TEAM_MESSAGES = [
+  { id:'tm1', authorId:'u3', body:'Brutal launch week — proud of all of us. Breathe this weekend 💪', createdAt:'2026-06-05T18:20:00Z' },
+  { id:'tm2', authorId:'u5', body:'Thanks team for covering while I was on a shoot. Owe you all a coffee ☕', createdAt:'2026-06-04T09:10:00Z' },
+];
+
 if (!window.WL_ALLOW_PROTOTYPE_DATA) {
+  TEAM_MESSAGES.splice(0, TEAM_MESSAGES.length);
   CLIENTS.splice(0, CLIENTS.length);
   ENTRIES.splice(0, ENTRIES.length);
   TEAM.splice(0, TEAM.length);

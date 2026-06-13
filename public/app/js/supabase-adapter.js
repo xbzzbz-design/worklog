@@ -125,6 +125,7 @@
     replaceArray(TEAM, []);
     replaceArray(HOLIDAYS, []);
     replaceArray(HELP_REQUESTS, []);
+    replaceArray(TEAM_MESSAGES, []);
     Object.keys(LEAVE).forEach(k => delete LEAVE[k]);
   }
 
@@ -175,7 +176,7 @@
       return false;
     }
 
-    const [meRes, usersRes, clientsRes, entriesRes, holidaysRes, leaveRes, settingsRes, helpRes] = await Promise.all([
+    const [meRes, usersRes, clientsRes, entriesRes, holidaysRes, leaveRes, settingsRes, helpRes, tmRes] = await Promise.all([
       sb.from('users').select('*').eq('id', user.id).single(),
       sb.from('users').select('*').order('name'),
       sb.from('clients').select('*').order('name'),
@@ -184,6 +185,7 @@
       sb.from('leave').select('*'),
       sb.from('team_settings').select('*').single(),
       sb.from('help_requests').select('*').order('created_at', { ascending: false }),
+      sb.from('team_messages').select('*').order('created_at', { ascending: false }),
     ]);
 
     if (meRes.data) {
@@ -228,6 +230,7 @@
     ENTRIES.forEach(e => { e._c = calcUnits(e); });
 
     replaceArray(HELP_REQUESTS, (helpRes.data || []).map(fromDbHelp));
+    replaceArray(TEAM_MESSAGES, (tmRes.data || []).map(t => ({ id: t.id, authorId: t.author_id, body: t.body, createdAt: t.created_at })));
     updateSidebarUser();
     return true;
   }
@@ -358,6 +361,22 @@
     if (idx >= 0) HELP_REQUESTS.splice(idx, 1);
   }
 
+  async function createTeamMessage(body) {
+    const user = await requireUser();
+    const { data, error } = await sb.from('team_messages').insert({ author_id: user.id, body }).select('*').single();
+    if (error) throw error;
+    const msg = { id: data.id, authorId: data.author_id, body: data.body, createdAt: data.created_at };
+    TEAM_MESSAGES.unshift(msg);
+    return msg;
+  }
+  async function deleteTeamMessage(id) {
+    const user = await requireUser();
+    const { error } = await sb.from('team_messages').delete().eq('id', id).eq('author_id', user.id);
+    if (error) throw error;
+    const idx = TEAM_MESSAGES.findIndex(m => m.id === id);
+    if (idx >= 0) TEAM_MESSAGES.splice(idx, 1);
+  }
+
   async function updateProfile(payload) {
     const user = await requireUser();
     const { error } = await sb.from('users').update({
@@ -446,6 +465,7 @@
   window.WLStore = {
     bootstrap, saveEntry, updateEntry, deleteEntry, createClient, setClientArchived,
     createHelpRequest, claimHelpRequest, resolveHelpRequest, deleteHelpRequest,
+    createTeamMessage, deleteTeamMessage,
     updateProfile, updateTeamSettings, updateRates, deleteHoliday, createHoliday, setLeave, clearLeave,
     updateClientName, deleteClient,
     supabase: sb

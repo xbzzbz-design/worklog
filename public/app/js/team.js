@@ -32,6 +32,23 @@ function renderTeam() {
       <div class="sub">How the squad is holding up this week — read as load and balance, never a scoreboard.</div>
     </div>
 
+    <!-- TEAM WALL (collective messages to the team — no reactions, no naming) -->
+    <div class="wall">
+      <div class="wall-compose">
+        <textarea id="wallInput" class="wall-in" rows="2" placeholder="Say something to the team — a thanks, rough-week solidarity, a small win…"></textarea>
+        <button class="btn wall-post" id="wallPost">${ic('send')} Post to the team</button>
+      </div>
+      ${TEAM_MESSAGES.length ? `<div class="wall-list">
+        ${TEAM_MESSAGES.slice(0, 8).map(m => { const a = teamMember(m.authorId); const mine = a && a.you; return `<div class="wall-msg">
+          <span class="av ${'c' + (a ? a.colorIdx : 0)}">${a ? a.initials : '?'}</span>
+          <div class="wall-body">
+            <div class="wall-meta"><b>${escHtml(a ? a.name : 'Teammate')}</b><span>${timeAgo(m.createdAt)}</span>${mine ? `<button class="wall-del" data-wall-del="${m.id}" aria-label="Remove">${ic('x')}</button>` : ''}</div>
+            <p>${escHtml(m.body)}</p>
+          </div>
+        </div>`; }).join('')}
+      </div>` : `<div class="wall-empty">${ic('messages-square')} No messages yet — be the first to send the team some warmth.</div>`}
+    </div>
+
     <!-- TEAM PULSE (colour state, computed daily) -->
     ${hasData ? `
     <div class="pulse-card pulse-${st.key}">
@@ -168,9 +185,35 @@ function balanceMessage(p) {
   </div>`;
 }
 
+function timeAgo(iso) {
+  if (!iso) return '';
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 60) return 'just now';
+  const m = Math.floor(s / 60); if (m < 60) return m + 'm';
+  const h = Math.floor(m / 60); if (h < 24) return h + 'h';
+  const d = Math.floor(h / 24); if (d < 7) return d + 'd';
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 function wireTeam(root) {
   const t = root.querySelector('#balToggle');
   if (t) t.addEventListener('click', () => { balanceEven = !balanceEven; rerenderScreen('team'); });
   const wt = root.querySelector('#wkToggle');
   if (wt) wt.addEventListener('click', () => { const el = root.querySelector('#wkClients'); if (!el) return; const o = el.hidden; el.hidden = !o; wt.classList.toggle('open', o); });
+
+  const post = root.querySelector('#wallPost');
+  if (post) post.addEventListener('click', () => runAction(post, async () => {
+    const inp = root.querySelector('#wallInput'); const body = (inp && inp.value || '').trim();
+    if (!body) { toast('Write a message first', 'info'); return; }
+    markSyncing();
+    if (window.WLStore && window.WLStore.createTeamMessage) await window.WLStore.createTeamMessage(body);
+    else TEAM_MESSAGES.unshift({ id: 'tm' + Date.now(), authorId: myId(), body, createdAt: new Date().toISOString() });
+    markSynced(); rerenderScreen('team'); toast('Sent to the team 💛', 'good');
+  }, 'Could not post message'));
+  root.querySelectorAll('[data-wall-del]').forEach(b => b.addEventListener('click', () => runAction(b, async () => {
+    const id = b.dataset.wallDel; markSyncing();
+    if (window.WLStore && window.WLStore.deleteTeamMessage) await window.WLStore.deleteTeamMessage(id);
+    else { const i = TEAM_MESSAGES.findIndex(m => m.id === id); if (i >= 0) TEAM_MESSAGES.splice(i, 1); }
+    markSynced(); rerenderScreen('team'); toast('Removed', 'info');
+  }, 'Could not remove message')));
 }

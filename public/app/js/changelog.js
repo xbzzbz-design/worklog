@@ -19,6 +19,8 @@ const CHANGELOG = [
       'Faster logging: a sticky Save bar (no scrolling to save), optional sections collapsed by default, the job type you use most pre-selected per client, and tap a job-type card again to +1 the quantity',
       'Working a weekend or public holiday now adds an automatic bonus unit',
       'Team view: a “this week, together” summary (units delivered, pieces shipped, by client) and the week now reads Mon–Fri',
+      'A private “We see you” on Home — the effort that usually goes unnoticed (days off worked, revisions absorbed, hands lent), recognised just for you, never ranked',
+      'A Team wall to send the whole team a note — solidarity, thanks, a small win — no reactions or scores, so no one is ever singled out',
       'Client difficulty now weights revisions by severity, cause and how many rounds the same piece took (minor tweaks barely count; our mistakes don’t)',
       '“Shoot / on location” added for time-based work',
       'Team view now shows a load pulse — Healthy / Send snacks / Heavy week — instead of a scoreboard, and skips anyone who hasn’t logged so no one looks idle',
