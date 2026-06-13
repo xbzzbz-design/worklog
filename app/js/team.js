@@ -75,7 +75,8 @@ function renderTeam() {
         <div class="wk-card"><b class="tnum">${wkPieces}</b><span>pieces shipped</span></div>
         <div class="wk-card"><b class="tnum">${rows.length}</b><span>client${rows.length===1?'':'s'} served</span></div>
       </div>
-      ${rows.length ? `<div class="wk-clients">${rows.map(c => `<div class="wk-crow">
+      ${rows.length ? `<button class="wk-more" id="wkToggle" type="button">${ic('contact')} <span>By client</span> <small>${rows.length} client${rows.length===1?'':'s'}</small> ${ic('chevron-down')}</button>
+      <div class="wk-clients" id="wkClients" hidden>${rows.map(c => `<div class="wk-crow">
         <span class="av ${avatarClass(c.id)}">${clientInitials(c.id)}</span>
         <span class="wk-cname">${escHtml(clientName(c.id))}</span>
         <span class="wk-cnum"><b>${c.pieces}</b> pcs · <b class="tnum">${u(c.units)}</b> u</span>
@@ -170,4 +171,6 @@ function balanceMessage(p) {
 function wireTeam(root) {
   const t = root.querySelector('#balToggle');
   if (t) t.addEventListener('click', () => { balanceEven = !balanceEven; rerenderScreen('team'); });
+  const wt = root.querySelector('#wkToggle');
+  if (wt) wt.addEventListener('click', () => { const el = root.querySelector('#wkClients'); if (!el) return; const o = el.hidden; el.hidden = !o; wt.classList.toggle('open', o); });
 }
