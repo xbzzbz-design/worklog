@@ -2,22 +2,24 @@
    WorkLog — Report + PDF preview
    ============================================================ */
 
+// all UTC-based so week/month boundaries don't drift a day in UTC+ zones
 function isoDate(d) { return d.toISOString().slice(0,10); }
 function startOfWeek(d) {
   const x = new Date(d);
-  const day = x.getDay() || 7;
-  x.setDate(x.getDate() - day + 1);
+  const day = x.getUTCDay() || 7;        // 1=Mon … 7=Sun
+  x.setUTCDate(x.getUTCDate() - day + 1); // back to Monday
+  x.setUTCHours(0, 0, 0, 0);
   return x;
 }
-function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function addDays(d, n) { const x = new Date(d); x.setUTCDate(x.getUTCDate() + n); return x; }
 function monthBounds(offset) {
-  const base = new Date(TODAY + 'T00:00:00');
-  const start = new Date(base.getFullYear(), base.getMonth() + offset, 1);
-  const end = new Date(base.getFullYear(), base.getMonth() + offset + 1, 0);
+  const base = new Date(TODAY); // date-only string parses as UTC midnight
+  const start = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + offset, 1));
+  const end = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + offset + 1, 0));
   return [isoDate(start), isoDate(end)];
 }
 function weekBounds(offset) {
-  const start = startOfWeek(new Date(TODAY + 'T00:00:00'));
+  const start = startOfWeek(new Date(TODAY));
   const shifted = addDays(start, offset * 7);
   return [isoDate(shifted), isoDate(addDays(shifted, 6))];
 }

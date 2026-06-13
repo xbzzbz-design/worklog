@@ -64,6 +64,16 @@ function hasMotion(e) { return motionUnitsOf(e) > 0; }
 // photo set helpers
 function setSummary(e) { return (e.setItems || []).map(it => { const j = JOB_TYPES[it.jobType] || { short: it.jobType }; return `${j.short}×${it.quantity || 1}`; }).join(', '); }
 function setQty(e) { return (e.setItems || []).reduce((s, it) => s + (it.quantity || 1), 0); }
+// how many delivered "pieces" an entry represents (for headline counts)
+function entryPieces(e) {
+  if (needsDetail(e)) return 0;
+  const jt = JOB_TYPES[e.jobType];
+  if (!jt) return 0;
+  if (jt.set) return setQty(e);
+  if (jt.timeBased) return 0;   // counted by the hour, not as pieces
+  if (jt.motion) return 1;      // one motion deliverable
+  return e.quantity || 1;
+}
 function motionSummary(e) {
   const parts = [];
   if ((e.motionSimple || 0) > 0) parts.push(`${e.motionSimple} simple`);
@@ -74,7 +84,21 @@ function motionSummary(e) {
 }
 
 /* ---- THE FORMULA ---- */
+// public entry point: core formula + an automatic bonus for working a day off
 function calcUnits(e) {
+  const r = _calcCore(e);
+  // weekend / public-holiday bonus — recognises giving up a day off. Skipped for
+  // Quick logs (units entered by hand), manual overrides, and no-credit mistakes.
+  const off = (isWeekend(e.date) || isHolidayDate(e.date)) ? (TEAM_SETTINGS.holidayAddOn || 0) : 0;
+  const noCredit = e.isRevision && e.revisionCause === 'OUR_MISTAKE';
+  if (off > 0 && e.jobType !== 'QUICK' && e.manualOverride == null && !noCredit) {
+    r.lines = (r.lines || []).concat([{ label: isHolidayDate(e.date) ? 'Holiday bonus' : 'Weekend bonus', val: off }]);
+    r.calculated = (r.calculated || 0) + off;
+    r.final = r.calculated;
+  }
+  return r;
+}
+function _calcCore(e) {
   // Quick log — the units the person tapped in ARE the value; no formula runs.
   if (e.jobType === 'QUICK') {
     const units = e.manualOverride != null ? e.manualOverride : (e.quantity || 0);
@@ -277,7 +301,9 @@ const ENTRIES = [
 ];
 
 // attach computed units
-ENTRIES.forEach(e => { e._c = calcUnits(e); });
+// initial pass uses the core formula only (holiday helpers below aren't defined
+// yet at load); live data is recomputed via calcUnits after bootstrap
+ENTRIES.forEach(e => { e._c = _calcCore(e); });
 
 /* ---- ownership ---- (personal views show only the signed-in user's work;
    Team and Client views stay team-wide. During the mock/prototype there's no

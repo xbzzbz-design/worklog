@@ -49,16 +49,16 @@
 .jt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .jt-card {
   display: flex; flex-direction: column; align-items: flex-start; gap: 0;
-  padding: 14px; background: var(--card); border: 1.5px solid var(--line);
+  padding: 11px 12px; background: var(--card); border: 1.5px solid var(--line);
   border-radius: var(--r); box-shadow: var(--sh-1); position: relative; transition: all .15s;
-  min-height: 96px;
+  min-height: 70px;
 }
 .jt-card:hover { border-color: var(--faint); }
 .jt-card.on { border-color: var(--primary); background: var(--primary-tint); box-shadow: 0 0 0 3px var(--primary-soft); }
-.jt-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in oklch, var(--jc) 16%, var(--card)); color: var(--jc); margin-bottom: 10px; }
-.jt-ic svg { width: 18px; height: 18px; }
-.jt-name { font-size: 13.5px; font-weight: 700; line-height: 1.15; }
-.jt-rate { position: absolute; top: 13px; right: 14px; font-size: 15px; font-weight: 800; color: var(--ink); }
+.jt-ic { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: color-mix(in oklch, var(--jc) 16%, var(--card)); color: var(--jc); margin-bottom: 7px; }
+.jt-ic svg { width: 16px; height: 16px; }
+.jt-name { font-size: 13px; font-weight: 700; line-height: 1.15; }
+.jt-rate { position: absolute; top: 11px; right: 12px; font-size: 14px; font-weight: 800; color: var(--ink); }
 .jt-rate small { font-size: 10px; color: var(--faint); font-weight: 600; }
 .jt-card.row { grid-column: span 2; flex-direction: row; align-items: center; min-height: auto; gap: 12px; }
 .jt-card.row .jt-ic { margin-bottom: 0; }
