@@ -6,7 +6,7 @@ let teamScope = 'week'; // 'week' | 'today'
 let balanceEven = false;
 
 function renderTeam() {
-  const weekStart = startOfWeek(new Date(TODAY + 'T00:00:00'));
+  const weekStart = startOfWeek(new Date(TODAY)); // UTC Monday
   const weekDates = Array.from({ length: 5 }, (_, i) => isoDate(addDays(weekStart, i)));
   const weeklyEntries = ENTRIES.filter(e => weekDates.includes(e.date));
   const split = {
@@ -61,6 +61,26 @@ function renderTeam() {
       <div class="pulse-head"><span class="pulse-orb"></span><div class="pulse-lab"><b>No logs yet this week</b><small>the picture fills in as people log</small></div></div>
       <div class="pulse-foot">${ic('shield-check')} Log your work to start the team's record — it's how we make the case for fair load together.</div>
     </div>`}
+
+    <!-- THIS WEEK, TOGETHER (headline totals) -->
+    <div class="section-h"><h2>This week, together</h2></div>
+    ${(() => {
+      const wkUnits = sum(weeklyEntries, e => e._c.final);
+      const wkPieces = weeklyEntries.reduce((s, e) => s + entryPieces(e), 0);
+      const byC = {};
+      weeklyEntries.forEach(e => { if (!e.clientId || needsDetail(e)) return; const b = byC[e.clientId] = byC[e.clientId] || { units: 0, pieces: 0 }; b.units += e._c.final; b.pieces += entryPieces(e); });
+      const rows = Object.entries(byC).map(([id, b]) => ({ id, ...b })).sort((a, b) => b.units - a.units);
+      return `<div class="wk-cards">
+        <div class="wk-card"><b class="tnum">${u(wkUnits)}</b><span>units delivered</span></div>
+        <div class="wk-card"><b class="tnum">${wkPieces}</b><span>pieces shipped</span></div>
+        <div class="wk-card"><b class="tnum">${rows.length}</b><span>client${rows.length===1?'':'s'} served</span></div>
+      </div>
+      ${rows.length ? `<div class="wk-clients">${rows.map(c => `<div class="wk-crow">
+        <span class="av ${avatarClass(c.id)}">${clientInitials(c.id)}</span>
+        <span class="wk-cname">${escHtml(clientName(c.id))}</span>
+        <span class="wk-cnum"><b>${c.pieces}</b> pcs · <b class="tnum">${u(c.units)}</b> u</span>
+      </div>`).join('')}</div>` : `<div class="wk-empty">No work logged this week yet.</div>`}`;
+    })()}
 
     <!-- WHERE CAPACITY WENT -->
     <div class="section-h"><h2>Where the hours went</h2></div>

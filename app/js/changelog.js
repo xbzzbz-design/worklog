@@ -17,6 +17,8 @@ const CHANGELOG = [
       'Variation & Adaptation can be marked Still or Motion — a motion version counts double',
       'New “Photo set” job type — add each piece into one cart; the set is one line on the report and one piece for difficulty, and can be revised as a whole',
       'Faster logging: a sticky Save bar (no scrolling to save), optional sections collapsed by default, the job type you use most pre-selected per client, and tap a job-type card again to +1 the quantity',
+      'Working a weekend or public holiday now adds an automatic bonus unit',
+      'Team view: a “this week, together” summary (units delivered, pieces shipped, by client) and the week now reads Mon–Fri',
       'Client difficulty now weights revisions by severity, cause and how many rounds the same piece took (minor tweaks barely count; our mistakes don’t)',
       '“Shoot / on location” added for time-based work',
       'Team view now shows a load pulse — Healthy / Send snacks / Heavy week — instead of a scoreboard, and skips anyone who hasn’t logged so no one looks idle',

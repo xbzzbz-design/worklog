@@ -266,3 +266,16 @@ body[data-theme="dark"] .bal-msg.flip { background: var(--paper-2); border-color
 .st-yellow .st-pip { background: var(--warn); }
 .st-red { color: var(--bad-ink); }
 .st-red .st-pip { background: var(--bad); }
+
+/* this week, together — headline totals + by-client */
+.wk-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 12px; }
+.wk-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--sh-1); padding: 14px; text-align: center; }
+.wk-card b { display: block; font-size: 24px; font-weight: 800; color: var(--primary); letter-spacing: -0.02em; }
+.wk-card span { font-size: 11px; color: var(--muted); font-weight: 600; }
+.wk-clients { display: flex; flex-direction: column; gap: 7px; }
+.wk-crow { display: flex; align-items: center; gap: 11px; padding: 11px 13px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--sh-1); }
+.wk-crow .av { width: 32px; height: 32px; flex: none; border-radius: 9px; display: grid; place-items: center; font-weight: 800; font-size: 12px; }
+.wk-cname { flex: 1; min-width: 0; font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wk-cnum { flex: none; font-size: 13px; color: var(--muted); font-weight: 600; }
+.wk-cnum b { color: var(--ink); }
+.wk-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 16px; font-style: italic; }
