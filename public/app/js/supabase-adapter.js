@@ -2,9 +2,14 @@
 (function () {
   const supabaseUrl = window.WL_SUPABASE_URL;
   const supabaseKey = window.WL_SUPABASE_ANON_KEY;
+  // The parent (React shell) is the SINGLE owner of the auth session: it refreshes
+  // the token and re-posts it here on every change. This iframe client must NOT
+  // refresh or persist on its own — two auto-refreshing clients on the same origin
+  // share storage and rotate each other's refresh token in a loop, which was
+  // hammering /auth/v1/token (the Auth Egress spike). It just consumes the token.
   const sb = window.supabase && window.supabase.createClient
     ? window.supabase.createClient(supabaseUrl, supabaseKey, {
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' }
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
       })
     : null;
 
@@ -152,17 +157,23 @@
     return data;
   }
 
+  // Resolve the signed-in user from the LOCAL session (no network) and cache it.
+  // Previously every action called getUser() which hits /auth/v1/user over the
+  // network — multiplied across logging it added avoidable Auth Egress.
+  let _cachedUser = null;
   async function requireUser() {
-    let { data: auth } = await sb.auth.getUser();
-    let user = auth && auth.user;
+    if (_cachedUser) return _cachedUser;
+    let { data } = await sb.auth.getSession();
+    let user = data && data.session && data.session.user;
     if (!user) {
       await waitForParentSession();
-      auth = (await sb.auth.getUser()).data;
-      user = auth && auth.user;
+      ({ data } = await sb.auth.getSession());
+      user = data && data.session && data.session.user;
     }
     if (!user) throw new Error('Not signed in');
     await ensureProfile(user);
     window.WL_CURRENT_USER_ID = user.id;
+    _cachedUser = user;
     return user;
   }
 
