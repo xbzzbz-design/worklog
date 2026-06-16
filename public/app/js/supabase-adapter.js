@@ -187,21 +187,22 @@
       return false;
     }
 
-    const [meRes, usersRes, clientsRes, entriesRes, holidaysRes, leaveRes, settingsRes, helpRes, tmRes] = await Promise.all([
-      sb.from('users').select('*').eq('id', user.id).single(),
+    const [usersRes, clientsRes, entriesRes, holidaysRes, leaveRes, settingsRes, helpRes, tmRes] = await Promise.all([
       sb.from('users').select('*').order('name'),
       sb.from('clients').select('*').order('name'),
       sb.from('entries').select('*').order('date', { ascending: false }),
       sb.from('holidays').select('*').order('date'),
       sb.from('leave').select('*'),
       sb.from('team_settings').select('*').single(),
-      sb.from('help_requests').select('*').order('created_at', { ascending: false }),
-      sb.from('team_messages').select('*').order('created_at', { ascending: false }),
+      sb.from('help_requests').select('*').order('created_at', { ascending: false }).limit(200),
+      sb.from('team_messages').select('*').order('created_at', { ascending: false }).limit(50),
     ]);
 
-    if (meRes.data) {
-      SETTINGS.userName = meRes.data.name || SETTINGS.userName;
-      SETTINGS.dailyMax = meRes.data.daily_max || SETTINGS.dailyMax;
+    // "me" is already in the users list — no need for a separate query
+    const meRow = (usersRes.data || []).find(u => u.id === user.id);
+    if (meRow) {
+      SETTINGS.userName = meRow.name || SETTINGS.userName;
+      SETTINGS.dailyMax = meRow.daily_max || SETTINGS.dailyMax;
     }
 
     if (settingsRes.data) {
